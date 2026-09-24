@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COOP Financial & Management Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tailwind Custom Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        coop: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full font-sans text-slate-800 flex overflow-hidden">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <aside id="sidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 z-30 flex-shrink-0">
+        <!-- Logo / Branding -->
+        <div class="h-16 flex items-center justify-between px-4 bg-slate-950 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-coop-600 to-emerald-400 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-coop-900/50">
+                    <i class="fa-solid font-bold fa-handshake"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-bold text-white text-base tracking-wide leading-tight">UNITY COOP</span>
+                    <span class="text-xs text-coop-400 font-medium">Financial Enterprise</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Indicator Banner -->
+        <div class="px-4 py-3 bg-slate-800/60 border-b border-slate-800 flex items-center justify-between text-xs">
+            <span class="text-slate-400">Current Role:</span>
+            <span id="role-badge" class="px-2 py-0.5 rounded-full bg-coop-500/20 text-coop-400 border border-coop-500/30 font-semibold uppercase tracking-wider text-[10px]">
+                Admin
+            </span>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="flex-1 py-4 px-3 space-y-1 overflow-y-auto custom-scrollbar">
+            <div class="px-3 pb-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Main Workflow</div>
+            
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors bg-coop-600 text-white shadow-sm">
+                <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
+                <span>Dashboard Overview</span>
+            </button>
+
+            <button onclick="switchTab('members')" id="nav-members" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors">
+                <i class="fa-solid fa-users w-5 text-center text-base"></i>
+                <span>Member Onboarding</span>
+                <span id="pending-members-count" class="ml-auto bg-amber-500/20 text-amber-300 text-xs px-2 py-0.5 rounded-full font-bold">2</span>
+            </button>
+
+            <button onclick="switchTab('loans')" id="nav-loans" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors">
+                <i class="fa-solid fa-hand-holding-dollar w-5 text-center text-base"></i>
+                <span>Loan Management</span>
+                <span id="pending-loans-count" class="ml-auto bg-rose-500/20 text-rose-300 text-xs px-2 py-0.5 rounded-full font-bold">3</span>
+            </button>
+
+            <button onclick="switchTab('savings')" id="nav-savings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors">
+                <i class="fa-solid fa-piggy-bank w-5 text-center text-base"></i>
+                <span>Savings & Capital</span>
+            </button>
+
+            <div class="pt-4 px-3 pb-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Analytics & Admin</div>
+
+            <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors">
+                <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-base"></i>
+                <span>Financial Reports</span>
+            </button>
+
+            <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors">
+                <i class="fa-solid fa-user-shield w-5 text-center text-base"></i>
+                <span>Roles & System Flow</span>
+            </button>
+        </nav>
+
+        <!-- User Quick Profile Footer -->
+        <div class="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" alt="Avatar" class="w-9 h-9 rounded-full object-cover ring-2 ring-coop-500/50">
+                <div class="flex flex-col">
+                    <span class="text-sm font-semibold text-slate-200 leading-none">Elena Rostova</span>
+                    <span class="text-[11px] text-slate-400 mt-1">Super Administrator</span>
+                </div>
+            </div>
+            <button onclick="toggleRoleSwitch()" title="Switch Role Mode" class="text-slate-400 hover:text-white p-1.5 rounded-md hover:bg-slate-800 transition-colors">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-slate-50">
+        
+        <!-- Header TopBar -->
+        <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between z-20 flex-shrink-0">
+            <div class="flex items-center gap-4">
+                <h1 id="page-title" class="text-xl font-bold text-slate-800 tracking-tight">Dashboard Overview</h1>
+                <span class="hidden md:inline-block px-2.5 py-1 text-xs rounded-full bg-slate-100 text-slate-600 font-medium border border-slate-200">
+                    <i class="fa-solid fa-circle text-[8px] text-coop-500 mr-1.5 animate-pulse"></i> Live Flow Active
+                </span>
+            </div>
+
+            <!-- Header Quick Actions & Notifications -->
+            <div class="flex items-center gap-3">
+                <!-- Search Bar -->
+                <div class="relative hidden sm:block">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" placeholder="Global search..." class="w-48 lg:w-64 pl-9 pr-4 py-1.5 text-sm bg-slate-100 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coop-500 focus:bg-white transition-all">
+                </div>
+
+                <!-- Quick Action Button Modal Triggers -->
+                <button onclick="openModal('register-member-modal')" class="bg-coop-600 hover:bg-coop-700 text-white text-xs md:text-sm font-medium px-3.5 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span class="hidden sm:inline">New Member</span>
+                </button>
+
+                <button onclick="openModal('apply-loan-modal')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-medium px-3.5 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all">
+                    <i class="fa-solid fa-file-circle-plus"></i>
+                    <span class="hidden sm:inline">Apply Loan</span>
+                </button>
+
+                <!-- Notifications Dropdown Trigger -->
+                <div class="relative">
+                    <button class="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors relative">
+                        <i class="fa-solid fa-bell text-lg"></i>
+                        <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-white"></span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div id="tab-content" class="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+
+            <!-- ================= TAB 1: DASHBOARD OVERVIEW ================= -->
+            <section id="view-dashboard" class="tab-view space-y-6">
+                <!-- KPI Cards Row -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    
+                    <!-- Total Capital -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Capital Fund</span>
+                            <h3 id="stat-capital" class="text-2xl font-bold text-slate-800 mt-1">$2,845,900</h3>
+                            <span class="text-xs text-emerald-600 font-medium inline-flex items-center gap-1 mt-1">
+                                <i class="fa-solid fa-arrow-trend-up"></i> +12.4% this month
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-coop-100 text-coop-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-vault"></i>
+                        </div>
+                    </div>
+
+                    <!-- Active Members -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Approved Members</span>
+                            <h3 id="stat-members" class="text-2xl font-bold text-slate-800 mt-1">1,420</h3>
+                            <span class="text-xs text-emerald-600 font-medium inline-flex items-center gap-1 mt-1">
+                                <i class="fa-solid fa-user-check"></i> 98% Active Status
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-users flex-shrink-0"></i>
+                        </div>
+                    </div>
+
+                    <!-- Active Loans Released -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Active Loan Portfolio</span>
+                            <h3 id="stat-loans" class="text-2xl font-bold text-slate-800 mt-1">$1,120,450</h3>
+                            <span class="text-xs text-amber-600 font-medium inline-flex items-center gap-1 mt-1">
+                                <i class="fa-solid fa-clock"></i> 3 Pending Approvals
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-hand-holding-dollar"></i>
+                        </div>
+                    </div>
+
+                    <!-- Interest Earned -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+                        <div>
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Net Interest Earned</span>
+                            <h3 id="stat-interest" class="text-2xl font-bold text-slate-800 mt-1">$184,230</h3>
+                            <span class="text-xs text-emerald-600 font-medium inline-flex items-center gap-1 mt-1">
+                                <i class="fa-solid fa-chart-line"></i> +8.1% vs target
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-xl">
+                            <i class="fa-solid fa-coins"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Main Financial Graph -->
+                    <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 class="font-bold text-slate-800">Capital Savings & Loan Disbursements</h4>
+                                <p class="text-xs text-slate-500">Monthly cash inflow vs credit extended</p>
+                            </div>
+                            <span class="text-xs font-medium px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md border border-slate-200">2026 Fiscal Year</span>
+                        </div>
+                        <div class="flex-1 min-h-[280px]">
+                            <canvas id="financialFlowChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Loan Status Distribution -->
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 class="font-bold text-slate-800">Loan Portfolio Mix</h4>
+                                <p class="text-xs text-slate-500">Distribution by verification status</p>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-h-[280px] flex items-center justify-center">
+                            <canvas id="loanDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities Flow Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-800">Live System Workflow Log</h4>
+                            <p class="text-xs text-slate-500">Real-time status of members, deposits, and credit actions</p>
+                        </div>
+                        <button onclick="switchTab('loans')" class="text-xs text-coop-600 hover:text-coop-800 font-semibold">View All Loans &rarr;</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-3">Transaction / Action</th>
+                                    <th class="px-6 py-3">Member Name</th>
+                                    <th class="px-6 py-3">Amount</th>
+                                    <th class="px-6 py-3">Role Handled</th>
+                                    <th class="px-6 py-3">Status Flow</th>
+                                    <th class="px-6 py-3">Date/Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-logs-table" class="divide-y divide-slate-100 text-slate-700">
+                                <!-- Dynamic items loaded via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 2: MEMBER MANAGEMENT ================= -->
+            <section id="view-members" class="tab-view hidden space-y-6">
+                <!-- Controls Header -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        <!-- Search Box -->
+                        <div class="relative flex-1 sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                            <input id="member-search" oninput="renderMembersTable()" type="text" placeholder="Search members by name/ID..." class="w-full pl-9 pr-3 py-1.5 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coop-500">
+                        </div>
+                        <!-- Status Filter -->
+                        <select id="member-status-filter" onchange="renderMembersTable()" class="py-1.5 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coop-500">
+                            <option value="ALL">All Statuses</option>
+                            <option value="Approved">Approved / Active</option>
+                            <option value="Pending">Pending Verification</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+
+                    <button onclick="openModal('register-member-modal')" class="bg-coop-600 hover:bg-coop-700 text-white font-medium text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all w-full sm:w-auto justify-center">
+                        <i class="fa-solid fa-user-plus"></i> Register New Member
+                    </button>
+                </div>
+
+                <!-- Member Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-3.5">Member ID</th>
+                                    <th class="px-6 py-3.5">Full Name</th>
+                                    <th class="px-6 py-3.5">Membership Class</th>
+                                    <th class="px-6 py-3.5">Capital Balance</th>
+                                    <th class="px-6 py-3.5">Savings Balance</th>
+                                    <th class="px-6 py-3.5">Approval Status</th>
+                                    <th class="px-6 py-3.5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="members-table-body" class="divide-y divide-slate-100">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 3: LOAN MANAGEMENT ================= -->
+            <section id="view-loans" class="tab-view hidden space-y-6">
+                <!-- Header Stats Cards for Loans -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-lg text-lg"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400 font-medium">Pending Review</span>
+                            <h4 id="count-pending-loans" class="text-xl font-bold text-slate-800">3 Requests</h4>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-lg text-lg"><i class="fa-solid fa-circle-check"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400 font-medium">Active Disbursed Loans</span>
+                            <h4 id="count-active-loans" class="text-xl font-bold text-slate-800">$1,120,450</h4>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center gap-4">
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-lg text-lg"><i class="fa-solid fa-arrows-rotate"></i></div>
+                        <div>
+                            <span class="text-xs text-slate-400 font-medium">Repayment Rate</span>
+                            <h4 class="text-xl font-bold text-slate-800">96.8%</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loan Filters & Trigger -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <select id="loan-status-filter" onchange="renderLoansTable()" class="py-1.5 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-coop-500">
+                            <option value="ALL">All Loan Applications</option>
+                            <option value="Pending">Pending Evaluation</option>
+                            <option value="Approved">Approved / Active</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Fully Paid">Fully Paid</option>
+                        </select>
+                    </div>
+
+                    <button onclick="openModal('apply-loan-modal')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm transition-all w-full sm:w-auto justify-center">
+                        <i class="fa-solid fa-file-circle-plus"></i> Submit Loan Application
+                    </button>
+                </div>
+
+                <!-- Loans Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-3.5">Loan Ref</th>
+                                    <th class="px-6 py-3.5">Applicant Member</th>
+                                    <th class="px-6 py-3.5">Loan Type</th>
+                                    <th class="px-6 py-3.5">Principal Amount</th>
+                                    <th class="px-6 py-3.5">Term / Interest</th>
+                                    <th class="px-6 py-3.5">Status Flow</th>
+                                    <th class="px-6 py-3.5 text-right">Credit Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loans-table-body" class="divide-y divide-slate-100">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 4: SAVINGS & CAPITAL ================= -->
+            <section id="view-savings" class="tab-view hidden space-y-6">
+                <div class="flex items-center justify-between bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div>
+                        <h3 class="font-bold text-slate-800">Savings & Share Capital Ledger</h3>
+                        <p class="text-xs text-slate-500">Process member cash deposits, share purchases, and withdrawals</p>
+                    </div>
+
+                    <button onclick="openModal('deposit-withdrawal-modal')" class="bg-coop-600 hover:bg-coop-700 text-white text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm">
+                        <i class="fa-solid fa-money-bill-transfer"></i> Process Cash Transaction
+                    </button>
+                </div>
+
+                <!-- Savings Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 text-slate-500 font-semibold text-xs uppercase border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-3.5">Tx ID</th>
+                                    <th class="px-6 py-3.5">Member Name</th>
+                                    <th class="px-6 py-3.5">Transaction Type</th>
+                                    <th class="px-6 py-3.5">Amount</th>
+                                    <th class="px-6 py-3.5">Channel / Cashier</th>
+                                    <th class="px-6 py-3.5">Date</th>
+                                    <th class="px-6 py-3.5 text-right">Receipt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table-body" class="divide-y divide-slate-100">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 5: REPORTS & ANALYTICS ================= -->
+            <section id="view-reports" class="tab-view hidden space-y-6">
+                <!-- Report Header Bar -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg">Financial Audit & Performance Report</h3>
+                        <p class="text-xs text-slate-500">Summary of cooperative earnings, loan dividends, and capital reserves</p>
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <button onclick="triggerExport('PDF')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-sm font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-file-pdf text-rose-600"></i> Export PDF Report
+                        </button>
+                        <button onclick="triggerExport('Excel')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-sm font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-file-excel text-emerald-600"></i> Export Excel (CSV)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Analytics Breakdown Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">Income Breakdown (YTD)</h4>
+                        <ul class="divide-y divide-slate-100 text-sm">
+                            <li class="py-3 flex justify-between">
+                                <span class="text-slate-600"><i class="fa-solid fa-circle text-[10px] text-coop-500 mr-2"></i> Loan Interest Yield</span>
+                                <span class="font-bold text-slate-800">$184,230</span>
+                            </li>
+                            <li class="py-3 flex justify-between">
+                                <span class="text-slate-600"><i class="fa-solid fa-circle text-[10px] text-blue-500 mr-2"></i> Membership Application Fees</span>
+                                <span class="font-bold text-slate-800">$14,200</span>
+                            </li>
+                            <li class="py-3 flex justify-between">
+                                <span class="text-slate-600"><i class="fa-solid fa-circle text-[10px] text-amber-500 mr-2"></i> Service Charges & Processing</span>
+                                <span class="font-bold text-slate-800">$8,950</span>
+                            </li>
+                            <li class="py-3 flex justify-between font-bold border-t-2 border-slate-200 pt-3">
+                                <span>Total Revenue</span>
+                                <span class="text-coop-700">$207,380</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-800 mb-2">Coop Reserve Funds</h4>
+                        <ul class="divide-y divide-slate-100 text-sm">
+                            <li class="py-3 flex justify-between">
+                                <span class="text-slate-600"><i class="fa-solid fa-vault mr-2 text-slate-400"></i> General Guarantee Reserve</span>
+                                <span class="font-bold text-slate-800">$450,000</span>
+                            </li>
+                            <li class="py-3 flex justify-between">
+                                <span class="text-slate-600"><i class="fa-solid fa-graduation-cap mr-2 text-slate-400"></i> Education & Training Fund</span>
+                                <span class="font-bold text-slate-800">$62,400</span>
+                            </li>
+                            <li class="py-3 flex justify-between">
+                                <span class="text-slate-600"><i class="fa-solid fa-hand-holding-heart mr-2 text-slate-400"></i> Community Development Fund</span>
+                                <span class="font-bold text-slate-800">$38,100</span>
+                            </li>
+                            <li class="py-3 flex justify-between font-bold border-t-2 border-slate-200 pt-3">
+                                <span>Total Dividends Payable</span>
+                                <span class="text-indigo-600">$124,500</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= TAB 6: ROLES & SYSTEM FLOW ================= -->
+            <section id="view-settings" class="tab-view hidden space-y-6">
+                <!-- System Architecture Map Reference -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-slate-800 text-lg mb-1">Flowchart Architecture & Role Access Matrix</h3>
+                    <p class="text-xs text-slate-500 mb-6">Configured in accordance with the Cooperative System Process Specification Diagram</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Admin Card -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="p-2 rounded-lg bg-coop-100 text-coop-800 text-xs font-bold uppercase"><i class="fa-solid fa-user-gear mr-1"></i> Admin</span>
+                            </div>
+                            <ul class="text-xs space-y-2 text-slate-600">
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Approve Member Registration</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Evaluate & Approve/Reject Loans</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Access Financial Audit & Reports</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Database Sync & System Config</li>
+                            </ul>
+                        </div>
+
+                        <!-- Staff / Cashier Card -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="p-2 rounded-lg bg-blue-100 text-blue-800 text-xs font-bold uppercase"><i class="fa-solid fa-user-tie mr-1"></i> Staff / Cashier</span>
+                            </div>
+                            <ul class="text-xs space-y-2 text-slate-600">
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Process Deposits & Withdrawals</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Process Loan Disbursements</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Issue Receipts & Statements</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-xmark text-slate-400"></i> Final Loan Approval Limit</li>
+                            </ul>
+                        </div>
+
+                        <!-- Member Card -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
+                            <div class="flex items-center gap-2 mb-3">
+                                <span class="p-2 rounded-lg bg-purple-100 text-purple-800 text-xs font-bold uppercase"><i class="fa-solid fa-user mr-1"></i> Member</span>
+                            </div>
+                            <ul class="text-xs space-y-2 text-slate-600">
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Submit Loan Application</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> View Personal Account Balance</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-check text-coop-600"></i> Track Repayment Schedule</li>
+                                <li class="flex items-center gap-1.5"><i class="fa-solid fa-xmark text-slate-400"></i> Admin Access Restricted</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    
+    <!-- MODAL 1: REGISTER MEMBER MODAL -->
+    <div id="register-member-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all p-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-lg">New Member Onboarding Form</h3>
+                <button onclick="closeModal('register-member-modal')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="form-register-member" onsubmit="handleRegisterMember(event)" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Full Name</label>
+                    <input type="text" id="reg-name" required placeholder="e.g. Maria Clara Santos" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Membership Class</label>
+                        <select id="reg-class" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                            <option value="Regular Member">Regular Member</option>
+                            <option value="Associate Member">Associate Member</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Initial Capital ($)</label>
+                        <input type="number" id="reg-capital" required min="100" value="500" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Email / Phone Contact</label>
+                    <input type="text" id="reg-contact" placeholder="maria@example.com" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeModal('register-member-modal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-coop-600 hover:bg-coop-700 text-white font-medium rounded-lg shadow-sm">Submit Registration</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: APPLY FOR LOAN MODAL -->
+    <div id="apply-loan-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all p-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-lg">Credit / Loan Application</h3>
+                <button onclick="closeModal('apply-loan-modal')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="form-apply-loan" onsubmit="handleApplyLoan(event)" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Select Member</label>
+                    <select id="loan-member-id" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Loan Type</label>
+                        <select id="loan-type" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                            <option value="Micro-Business">Micro-Business Expansion</option>
+                            <option value="Personal Emergency">Personal Emergency</option>
+                            <option value="Agricultural Credit">Agricultural Credit</option>
+                            <option value="Educational Support">Educational Support</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Amount Requested ($)</label>
+                        <input type="number" id="loan-amount" required min="500" value="5000" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Term (Months)</label>
+                        <select id="loan-term" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                            <option value="6">6 Months</option>
+                            <option value="12" selected>12 Months</option>
+                            <option value="24">24 Months</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Interest Rate (%)</label>
+                        <input type="text" value="6.0% p.a." readonly class="w-full px-3 py-2 text-sm bg-slate-100 border border-slate-200 text-slate-500 rounded-lg">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeModal('apply-loan-modal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg shadow-sm">Submit Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: CASH DEPOSIT / WITHDRAWAL MODAL -->
+    <div id="deposit-withdrawal-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all p-6">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-lg">Cash Deposit / Withdrawal Entry</h3>
+                <button onclick="closeModal('deposit-withdrawal-modal')" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="form-tx" onsubmit="handleTransactionSubmit(event)" class="mt-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Select Member</label>
+                    <select id="tx-member-id" required class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Transaction Type</label>
+                        <select id="tx-type" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                            <option value="Deposit">Savings Deposit</option>
+                            <option value="Share Capital">Share Capital Contribution</option>
+                            <option value="Withdrawal">Savings Withdrawal</option>
+                            <option value="Loan Payment">Loan Repayment</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Amount ($)</label>
+                        <input type="number" id="tx-amount" required min="10" value="250" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-coop-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeModal('deposit-withdrawal-modal')" class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-sm bg-coop-600 hover:bg-coop-700 text-white font-medium rounded-lg shadow-sm">Post Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global Application State (Flow Chart Synced Data)
+        let membersData = [
+            { id: 'MEM-1001', name: 'John Doe', type: 'Regular Member', capital: 15000, savings: 8400, status: 'Approved' },
+            { id: 'MEM-1002', name: 'Sarah Jenkins', type: 'Regular Member', capital: 22000, savings: 14200, status: 'Approved' },
+            { id: 'MEM-1003', name: 'Michael Tan', type: 'Associate Member', capital: 5000, savings: 1200, status: 'Pending' },
+            { id: 'MEM-1004', name: 'Alicia Ramos', type: 'Regular Member', capital: 18500, savings: 9600, status: 'Approved' },
+            { id: 'MEM-1005', name: 'David Smith', type: 'Associate Member', capital: 2000, savings: 500, status: 'Pending' }
+        ];
+
+        let loansData = [
+            { id: 'LN-501', memberId: 'MEM-1001', memberName: 'John Doe', type: 'Micro-Business', amount: 25000, term: '12 Mo', interest: '6%', status: 'Approved' },
+            { id: 'LN-502', memberId: 'MEM-1002', memberName: 'Sarah Jenkins', type: 'Agricultural Credit', amount: 40000, term: '24 Mo', interest: '6%', status: 'Approved' },
+            { id: 'LN-503', memberId: 'MEM-1003', memberName: 'Michael Tan', type: 'Personal Emergency', amount: 8000, term: '6 Mo', interest: '6%', status: 'Pending' },
+            { id: 'LN-504', memberId: 'MEM-1004', memberName: 'Alicia Ramos', type: 'Educational Support', amount: 15000, term: '12 Mo', interest: '6%', status: 'Pending' },
+            { id: 'LN-505', memberId: 'MEM-1005', memberName: 'David Smith', type: 'Micro-Business', amount: 10000, term: '12 Mo', interest: '6%', status: 'Pending' }
+        ];
+
+        let transactionsData = [
+            { id: 'TX-901', memberName: 'John Doe', type: 'Savings Deposit', amount: '$500.00', channel: 'Teller Cashier', date: '2026-09-24 10:15 AM' },
+            { id: 'TX-902', memberName: 'Sarah Jenkins', type: 'Loan Repayment', amount: '$1,250.00', channel: 'Auto-Debit Flow', date: '2026-09-24 09:30 AM' },
+            { id: 'TX-903', memberName: 'Alicia Ramos', type: 'Share Capital Contribution', amount: '$2,000.00', channel: 'Bank Transfer', date: '2026-09-23 04:45 PM' }
+        ];
+
+        let systemLogs = [
+            { action: 'Loan Evaluation Submitted', member: 'Michael Tan', amount: '$8,000.00', role: 'Staff/Cashier', status: 'Pending Review', date: '10 mins ago' },
+            { action: 'New Member Application', member: 'David Smith', amount: '$2,000.00', role: 'System Gate', status: 'Pending Approval', date: '25 mins ago' },
+            { action: 'Savings Deposit Cleared', member: 'John Doe', amount: '$500.00', role: 'Staff/Cashier', status: 'Completed', date: '1 hour ago' }
+        ];
+
+        let currentRole = 'Admin'; // Admin | Cashier | Member
+        let financialChartInstance = null;
+        let loanChartInstance = null;
+
+        // Initialize App on DOM Ready
+        window.onload = function() {
+            renderRecentLogs();
+            renderMembersTable();
+            renderLoansTable();
+            renderTransactionsTable();
+            populateMemberDropdowns();
+            initCharts();
+            updateCounts();
+        };
+
+        // Navigation Switching Logic
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-view').forEach(view => view.classList.add('hidden'));
+            
+            // Deactivate all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-coop-600', 'text-white', 'shadow-sm');
+                btn.classList.add('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-800/60');
+            });
+
+            // Show selected tab
+            const targetView = document.getElementById(`view-${tabName}`);
+            if(targetView) targetView.classList.remove('hidden');
+
+            // Highlight active button
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-coop-600', 'text-white', 'shadow-sm');
+                activeBtn.classList.remove('text-slate-400', 'hover:text-slate-200', 'hover:bg-slate-800/60');
+            }
+
+            // Update Header Title
+            const titles = {
+                'dashboard': 'Dashboard Overview',
+                'members': 'Member Management & Onboarding',
+                'loans': 'Loan Application & Credit Workflow',
+                'savings': 'Savings & Financial Transactions',
+                'reports': 'Financial Audit & Reports',
+                'settings': 'Role & Architecture Specification'
+            };
+            document.getElementById('page-title').innerText = titles[tabName] || 'Dashboard';
+        }
+
+        function renderRecentLogs() {
+            const tbody = document.getElementById('recent-logs-table');
+            tbody.innerHTML = systemLogs.map(log => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-semibold text-slate-800">${log.action}</td>
+                    <td class="px-6 py-4">${log.member}</td>
+                    <td class="px-6 py-4 font-medium text-slate-800">${log.amount}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 bg-slate-100 text-slate-600 rounded text-xs">${log.role}</span></td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            log.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                        }">${log.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-400">${log.date}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderMembersTable() {
+            const tbody = document.getElementById('members-table-body');
+            const searchVal = document.getElementById('member-search').value.toLowerCase();
+            const statusVal = document.getElementById('member-status-filter').value;
+
+            const filtered = membersData.filter(m => {
+                const matchesSearch = m.name.toLowerCase().includes(searchVal) || m.id.toLowerCase().includes(searchVal);
+                const matchesStatus = statusVal === 'ALL' || m.status === statusVal;
+                return matchesSearch && matchesStatus;
+            });
+
+            tbody.innerHTML = filtered.map(m => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-mono text-xs text-slate-500">${m.id}</td>
+                    <td class="px-6 py-4 font-bold text-slate-800">${m.name}</td>
+                    <td class="px-6 py-4 text-xs"><span class="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md font-medium">${m.type}</span></td>
+                    <td class="px-6 py-4 font-medium text-slate-800">$${m.capital.toLocaleString()}</td>
+                    <td class="px-6 py-4 font-medium text-coop-700">$${m.savings.toLocaleString()}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            m.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 
+                            m.status === 'Pending' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
+                        }">${m.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-1">
+                        ${m.status === 'Pending' ? `
+                            <button onclick="approveMember('${m.id}')" class="px-2.5 py-1 bg-coop-600 hover:bg-coop-700 text-white rounded text-xs font-medium transition-all shadow-sm">
+                                Approve
+                            </button>
+                            <button onclick="rejectMember('${m.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-medium transition-all shadow-sm">
+                                Reject
+                            </button>
+                        ` : `
+                            <span class="text-xs text-slate-400 font-medium">Verified Active</span>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderLoansTable() {
+            const tbody = document.getElementById('loans-table-body');
+            const statusVal = document.getElementById('loan-status-filter').value;
+
+            const filtered = loansData.filter(l => statusVal === 'ALL' || l.status === statusVal);
+
+            tbody.innerHTML = filtered.map(l => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-mono text-xs text-slate-500">${l.id}</td>
+                    <td class="px-6 py-4 font-bold text-slate-800">${l.memberName}</td>
+                    <td class="px-6 py-4 text-xs font-medium text-slate-600">${l.type}</td>
+                    <td class="px-6 py-4 font-bold text-slate-900">$${l.amount.toLocaleString()}</td>
+                    <td class="px-6 py-4 text-xs">${l.term} @ ${l.interest}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            l.status === 'Approved' ? 'bg-emerald-100 text-emerald-800' : 
+                            l.status === 'Pending' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800'
+                        }">${l.status}</span>
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-1">
+                        ${l.status === 'Pending' ? `
+                            <button onclick="approveLoan('${l.id}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-medium shadow-sm">
+                                <i class="fa-solid fa-check mr-1"></i> Approve
+                            </button>
+                            <button onclick="rejectLoan('${l.id}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-medium shadow-sm">
+                                Reject
+                            </button>
+                        ` : `
+                            <span class="text-xs text-slate-400"><i class="fa-solid fa-lock text-slate-300 mr-1"></i> Decision Logged</span>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderTransactionsTable() {
+            const tbody = document.getElementById('transactions-table-body');
+            tbody.innerHTML = transactionsData.map(t => `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-6 py-4 font-mono text-xs text-slate-500">${t.id}</td>
+                    <td class="px-6 py-4 font-bold text-slate-800">${t.memberName}</td>
+                    <td class="px-6 py-4"><span class="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">${t.type}</span></td>
+                    <td class="px-6 py-4 font-bold text-emerald-600">${t.amount}</td>
+                    <td class="px-6 py-4 text-xs text-slate-500">${t.channel}</td>
+                    <td class="px-6 py-4 text-xs text-slate-400">${t.date}</td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="showToast('Receipt Generated for ${t.id}', 'info')" class="text-coop-600 hover:text-coop-800 text-xs font-semibold">
+                            <i class="fa-solid fa-receipt mr-1"></i> Receipt
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Action Handlers
+        function approveMember(id) {
+            const m = membersData.find(x => x.id === id);
+            if(m) {
+                m.status = 'Approved';
+                renderMembersTable();
+                updateCounts();
+                showToast(`Member ${m.name} verified & approved!`, 'success');
+                addSystemLog('Member Approved', m.name, `$${m.capital}`, 'Admin Gate', 'Completed');
+            }
+        }
+
+        function rejectMember(id) {
+            const m = membersData.find(x => x.id === id);
+            if(m) {
+                m.status = 'Rejected';
+                renderMembersTable();
+                updateCounts();
+                showToast(`Member registration rejected.`, 'error');
+            }
+        }
+
+        function approveLoan(id) {
+            const l = loansData.find(x => x.id === id);
+            if(l) {
+                l.status = 'Approved';
+                renderLoansTable();
+                updateCounts();
+                showToast(`Loan ${l.id} for $${l.amount.toLocaleString()} disbursed!`, 'success');
+                addSystemLog('Loan Disbursement', l.memberName, `$${l.amount.toLocaleString()}`, 'Credit Committee', 'Completed');
+            }
+        }
+
+        function rejectLoan(id) {
+            const l = loansData.find(x => x.id === id);
+            if(l) {
+                l.status = 'Rejected';
+                renderLoansTable();
+                updateCounts();
+                showToast(`Loan ${l.id} has been rejected.`, 'error');
+            }
+        }
+
+        function handleRegisterMember(e) {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const cls = document.getElementById('reg-class').value;
+            const cap = parseFloat(document.getElementById('reg-capital').value);
+
+            const newMem = {
+                id: `MEM-${1000 + membersData.length + 1}`,
+                name: name,
+                type: cls,
+                capital: cap,
+                savings: 0,
+                status: 'Pending'
+            };
+
+            membersData.unshift(newMem);
+            renderMembersTable();
+            populateMemberDropdowns();
+            updateCounts();
+            closeModal('register-member-modal');
+            showToast('New member submitted for verification!', 'success');
+            addSystemLog('New Onboarding', name, `$${cap}`, 'Registration Flow', 'Pending Review');
+            document.getElementById('form-register-member').reset();
+        }
+
+        function handleApplyLoan(e) {
+            e.preventDefault();
+            const memId = document.getElementById('loan-member-id').value;
+            const mem = membersData.find(m => m.id === memId);
+            const amount = parseFloat(document.getElementById('loan-amount').value);
+            const type = document.getElementById('loan-type').value;
+            const term = document.getElementById('loan-term').value;
+
+            const newLoan = {
+                id: `LN-${500 + loansData.length + 1}`,
+                memberId: memId,
+                memberName: mem ? mem.name : 'Applicant',
+                type: type,
+                amount: amount,
+                term: `${term} Mo`,
+                interest: '6%',
+                status: 'Pending'
+            };
+
+            loansData.unshift(newLoan);
+            renderLoansTable();
+            updateCounts();
+            closeModal('apply-loan-modal');
+            showToast('Credit application submitted for review!', 'success');
+            addSystemLog('Credit Request', newLoan.memberName, `$${amount.toLocaleString()}`, 'Member Portal', 'Pending Evaluation');
+            document.getElementById('form-apply-loan').reset();
+        }
+
+        function handleTransactionSubmit(e) {
+            e.preventDefault();
+            const memId = document.getElementById('tx-member-id').value;
+            const mem = membersData.find(m => m.id === memId);
+            const type = document.getElementById('tx-type').value;
+            const amount = parseFloat(document.getElementById('tx-amount').value);
+
+            if (mem) {
+                if (type === 'Savings Deposit') mem.savings += amount;
+                if (type === 'Share Capital') mem.capital += amount;
+            }
+
+            const newTx = {
+                id: `TX-${900 + transactionsData.length + 1}`,
+                memberName: mem ? mem.name : 'Member',
+                type: type,
+                amount: `$${amount.toFixed(2)}`,
+                channel: 'Counter Teller',
+                date: new Date().toLocaleString()
+            };
+
+            transactionsData.unshift(newTx);
+            renderTransactionsTable();
+            renderMembersTable();
+            closeModal('deposit-withdrawal-modal');
+            showToast('Financial transaction posted successfully!', 'success');
+            document.getElementById('form-tx').reset();
+        }
+
+        function addSystemLog(action, member, amount, role, status) {
+            systemLogs.unshift({
+                action, member, amount, role, status, date: 'Just now'
+            });
+            renderRecentLogs();
+        }
+
+        function populateMemberDropdowns() {
+            const opts = membersData.map(m => `<option value="${m.id}">${m.name} (${m.id})</option>`).join('');
+            document.getElementById('loan-member-id').innerHTML = opts;
+            document.getElementById('tx-member-id').innerHTML = opts;
+        }
+
+        function updateCounts() {
+            const pendingMembers = membersData.filter(m => m.status === 'Pending').length;
+            const pendingLoans = loansData.filter(l => l.status === 'Pending').length;
+            
+            document.getElementById('pending-members-count').innerText = pendingMembers;
+            document.getElementById('pending-loans-count').innerText = pendingLoans;
+            document.getElementById('count-pending-loans').innerText = `${pendingLoans} Requests`;
+
+            const activeLoansVal = loansData
+                .filter(l => l.status === 'Approved')
+                .reduce((acc, curr) => acc + curr.amount, 0);
+            document.getElementById('count-active-loans').innerText = `$${activeLoansVal.toLocaleString()}`;
+        }
+
+        // Modal Helpers
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Role Switch Demo
+        function toggleRoleSwitch() {
+            currentRole = currentRole === 'Admin' ? 'Staff Cashier' : 'Admin';
+            document.getElementById('role-badge').innerText = currentRole;
+            showToast(`Switched active view mode to ${currentRole}`, 'info');
+        }
+
+        function triggerExport(type) {
+            showToast(`Preparing ${type} export download...`, 'info');
+        }
+
+        function initCharts() {
+            // Line Chart: Financial Inflows
+            const ctx1 = document.getElementById('financialFlowChart').getContext('2d');
+            financialChartInstance = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+                    datasets: [
+                        {
+                            label: 'Member Deposits & Capital ($)',
+                            data: [180000, 220000, 250000, 290000, 310000, 380000, 420000, 490000, 530000],
+                            borderColor: '#16a34a',
+                            backgroundColor: 'rgba(22, 163, 74, 0.08)',
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Loans Disbursed ($)',
+                            data: [120000, 150000, 180000, 210000, 240000, 280000, 320000, 360000, 410000],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'transparent',
+                            borderDash: [5, 5],
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { grid: { borderDash: [2, 2] } } }
+                }
+            });
+
+            // Doughnut Chart: Loan Status Distribution
+            const ctx2 = document.getElementById('loanDistributionChart').getContext('2d');
+            loanChartInstance = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Approved / Active', 'Pending Review', 'Fully Repaid'],
+                    datasets: [{
+                        data: [65, 15, 20],
+                        backgroundColor: ['#16a34a', '#f59e0b', '#3b82f6'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        // Notification Toast Engine
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'success' ? 'bg-slate-900 border-coop-500' :
+                            type === 'error' ? 'bg-slate-900 border-rose-500' : 'bg-slate-900 border-blue-500';
+            const iconClass = type === 'success' ? 'fa-circle-check text-coop-400' :
+                             type === 'error' ? 'fa-circle-xmark text-rose-400' : 'fa-circle-info text-blue-400';
+
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl border-l-4 shadow-xl flex items-center gap-3 text-sm pointer-events-auto transform transition-all duration-300 translate-x-8 opacity-0`;
+            toast.innerHTML = `
+                <i class="fa-solid ${iconClass} text-lg"></i>
+                <span class="font-medium">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-x-8', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-8');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
