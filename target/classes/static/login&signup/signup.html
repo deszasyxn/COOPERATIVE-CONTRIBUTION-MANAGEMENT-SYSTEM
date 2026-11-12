@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign Up</title>
+  <link rel="stylesheet" href="logsignDesigns.css">
+</head>
+<body>
+  <main class="page">
+    <header class="welcome">
+      <h1>Create Account</h1>
+      <p>Sign up to get started</p>
+    </header>
+
+    <section class="card">
+      <div class="avatar" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="38" r="15" fill="#3b82f6"/>
+          <path d="M20 100c0-24 13-38 30-38s30 14 30 38z" fill="#3b82f6"/>
+        </svg>
+      </div>
+      
+      <form id="signup-form" novalidate>
+        <!--Form input for Cooperative Name-->
+        <div class="field">
+          <div class="input-wrap">
+            <input type="text" id="fullname" name="fullname" placeholder="San Juan Cooperative" autocomplete="name" required>
+          </div>
+          <label for="fullname">Cooperative Name</label>
+          <span class="error">Enter your full name.</span>
+        </div>
+
+        <!--Form for Admin name-->
+        <div class="field">
+            <div class="input-wrap">
+              <input type="text" id="adminname" name="adminname" placeholder="Admin Name" autocomplete="name" required>
+            </div>
+            <label for="adminname">Admin Name</label>
+            <span class="error">Enter the admin's name.</span>
+        </div>
+
+        <div class="field">
+          <div class="input-wrap">
+            <input type="email" id="email" name="email" placeholder="name@email.com" autocomplete="email" required>
+          </div>
+          <label for="email">Email</label>
+          <span class="error">Enter a valid email address.</span>
+        </div>
+
+        <div class="row">
+          <label class="check terms">
+            <input type="checkbox" name="terms" id="terms" required>
+            <span>I agree to the <a href="#">Terms and Conditions</a></span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn">SIGN UP</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="signup.js"></script>
+</body>
+</html>

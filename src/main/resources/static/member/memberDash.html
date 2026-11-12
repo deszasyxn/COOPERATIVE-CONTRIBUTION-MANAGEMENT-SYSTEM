@@ -1,0 +1,446 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#123d78">
+  <title>Member Portal | Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="../member/memberDash.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+
+    <a class="brand" href="#">
+      <span class="brand-mark">M</span>
+      <span class="brand-copy">
+        <strong>MemberHub</strong>
+        <small>MEMBER PORTAL</small>
+      </span>
+    </a>
+
+    <div class="workspace-label">WORKSPACE</div>
+
+    <nav class="nav-list">
+      <button class="nav-link active" data-page="overview">
+        <span class="nav-icon">▦</span>
+        <span>Dashboard</span>
+      </button>
+
+      <button class="nav-link" data-page="profile">
+        <span class="nav-icon">◉</span>
+        <span>My Profile</span>
+      </button>
+
+      <button class="nav-link" data-page="schedule">
+        <span class="nav-icon">▦</span>
+        <span>Payment Schedule</span>
+      </button>
+
+      <button class="nav-link" data-page="contributions">
+        <span class="nav-icon">▱</span>
+        <span>My Contributions</span>
+      </button>
+
+      <button class="nav-link" data-page="history">
+        <span class="nav-icon">▤</span>
+        <span>Payment History</span>
+      </button>
+
+      <button class="nav-link" data-page="notifications">
+        <span class="nav-icon">♧</span>
+        <span>Notifications</span>
+        <span class="nav-count">0</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+
+      <div class="help-card">
+        <div class="help-icon">✦</div>
+        <strong>Need a hand?</strong>
+        <p>Our support team is ready to help.</p>
+        <a href="#">
+          Contact support <span>↗</span>
+        </a>
+      </div>
+
+      <button class="nav-link logout" id="logoutBtn">
+        <span class="nav-icon">⇥</span>
+        <span>Log out</span>
+      </button>
+
+      <div class="sidebar-foot">
+        © MemberHub
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-area">
+
+    <!-- TOP NAVIGATION -->
+    <header class="topbar">
+
+      <div class="topbar-left">
+        <button class="icon-button menu-toggle" id="menuToggle">
+          ☰
+        </button>
+
+        <div>
+          <div class="eyebrow">MEMBER PORTAL</div>
+          <div class="breadcrumb">
+            Workspace <span>/</span>
+            <strong id="crumb">Dashboard</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+
+        <button class="icon-button notification-button"
+          aria-label="Notifications"
+          data-goto="notifications">
+          ♧<i></i>
+        </button>
+
+        <div class="top-divider"></div>
+
+        <button class="user-menu" id="userMenu">
+          <span class="mini-avatar">MN</span>
+
+          <span class="user-menu-copy">
+            <strong>Member Name</strong>
+            <small>Member account</small>
+          </span>
+
+          <span class="chevron">⌄</span>
+        </button>
+
+      </div>
+    </header>
+
+    <div class="content-wrap">
+
+      <!-- PAGE HEADER -->
+      <section class="page-heading">
+
+        <div>
+          <div class="eyebrow">
+            MEMBER DASHBOARD
+          </div>
+
+          <h1 id="pageTitle">
+            Welcome back, Member <span>✦</span>
+          </h1>
+
+          <p>
+            Here's an overview of your membership and account activity.
+          </p>
+        </div>
+
+        <button class="primary-button" id="downloadBtn">
+          <span>↓</span> Download statement
+        </button>
+
+      </section>
+
+      <!-- MEMBER PROFILE BANNER -->
+      <section class="profile-banner">
+
+        <div class="profile-main">
+
+          <div class="avatar-large">MN</div>
+
+          <div>
+            <div class="member-label">
+              ACTIVE MEMBER
+              <span class="status-dot"></span>
+            </div>
+
+            <h2>Member Name</h2>
+
+            <p>
+              Member ID <strong>#M-000</strong>
+              <span class="bullet">•</span>
+              Joined [Month Year]
+            </p>
+          </div>
+
+        </div>
+
+        <button class="outline-button" data-goto="profile">
+          View profile <span>↗</span>
+        </button>
+
+      </section>
+
+      <!-- STATISTICS -->
+      <section class="stats-grid">
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span>Total contributions</span>
+            <span class="stat-icon blue">▱</span>
+          </div>
+
+          <div class="stat-value">₱0.00</div>
+
+          <div class="stat-foot">
+            <span class="trend">—</span>
+            <span>No data available</span>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span>Next payment</span>
+            <span class="stat-icon violet">◷</span>
+          </div>
+
+          <div class="stat-value">₱0.00</div>
+
+          <div class="stat-foot">
+            <span class="due-pill">No scheduled payment</span>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span>Payments completed</span>
+            <span class="stat-icon green">✓</span>
+          </div>
+
+          <div class="stat-value">
+            0 <small>/ 0</small>
+          </div>
+
+          <div class="progress-track">
+            <span style="width:0%"></span>
+          </div>
+
+          <div class="stat-foot">
+            No payment plan yet
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-top">
+            <span>Account standing</span>
+            <span class="stat-icon amber">✧</span>
+          </div>
+
+          <div class="stat-value standing">
+            Not available
+          </div>
+
+          <div class="stat-foot">
+            <span class="status-dot"></span>
+            No records available
+          </div>
+        </article>
+
+      </section>
+
+      <!-- DASHBOARD TABLES -->
+      <section class="dashboard-grid">
+
+        <!-- PAYMENT SCHEDULE -->
+        <article class="panel schedule-panel">
+
+          <div class="panel-heading">
+
+            <div>
+              <div class="eyebrow">UPCOMING</div>
+              <h3>Payment schedule</h3>
+              <p>Your next scheduled contributions.</p>
+            </div>
+
+            <button class="text-button" data-goto="schedule">
+              View all <span>→</span>
+            </button>
+
+          </div>
+
+          <div class="table-wrap">
+
+            <table>
+              <thead>
+                <tr>
+                  <th>PAYMENT</th>
+                  <th>DUE DATE</th>
+                  <th>AMOUNT</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+
+              <tbody>
+
+                <tr>
+                  <td colspan="4" style="text-align:center; color:#6b7280; padding:1.25rem;">
+                    No upcoming payments yet.
+                  </td>
+                </tr>
+
+              </tbody>
+            </table>
+
+          </div>
+        </article>
+
+        <!-- RECENT ACTIVITY -->
+        <article class="panel activity-panel">
+
+          <div class="panel-heading">
+
+            <div>
+              <div class="eyebrow">LATEST UPDATES</div>
+              <h3>Recent activity</h3>
+              <p>Your latest account transactions.</p>
+            </div>
+
+            <button class="more-button">•••</button>
+
+          </div>
+
+          <div class="activity-list">
+
+            <div class="activity-item" style="justify-content:center; color:#6b7280;">
+              No recent activity.
+            </div>
+
+          </div>
+
+          <button class="activity-link" data-goto="history">
+            See payment history <span>→</span>
+          </button>
+
+        </article>
+
+      </section>
+
+      <!-- CONTRIBUTIONS AND PERSONAL INFORMATION -->
+      <section class="bottom-grid">
+
+        <article class="panel contribution-panel">
+
+          <div class="panel-heading">
+            <div>
+              <div class="eyebrow">YOUR MEMBERSHIP</div>
+              <h3>Contribution overview</h3>
+            </div>
+
+            <span class="period-tag">Year</span>
+          </div>
+
+          <div class="contribution-total">
+            <strong>₱0.00</strong>
+            <span>Total contributed this year</span>
+          </div>
+
+          <div class="chart">
+
+            <div class="chart-y">
+              <span>₱0</span>
+              <span>₱0</span>
+              <span>₱0</span>
+            </div>
+
+            <div class="chart-bars">
+
+              <div class="bar-group">
+                <i style="height:0%"></i>
+                <small>JAN</small>
+              </div>
+
+              <div class="bar-group">
+                <i style="height:0%"></i>
+                <small>FEB</small>
+              </div>
+
+              <div class="bar-group">
+                <i style="height:0%"></i>
+                <small>MAR</small>
+              </div>
+
+              <div class="bar-group">
+                <i style="height:0%"></i>
+                <small>APR</small>
+              </div>
+
+              <div class="bar-group">
+                <i style="height:0%"></i>
+                <small>MAY</small>
+              </div>
+
+              <div class="bar-group">
+                <i style="height:0%"></i>
+                <small>JUN</small>
+              </div>
+
+            </div>
+          </div>
+        </article>
+
+        <!-- PERSONAL INFORMATION -->
+        <article class="panel account-panel">
+
+          <div class="panel-heading">
+
+            <div>
+              <div class="eyebrow">ACCOUNT DETAILS</div>
+              <h3>Personal information</h3>
+            </div>
+
+            <button class="text-button" data-goto="profile">
+              Edit <span>↗</span>
+            </button>
+
+          </div>
+
+          <div class="detail-list">
+
+            <div>
+              <span>Email address</span>
+              <strong>Not provided</strong>
+            </div>
+
+            <div>
+              <span>Phone number</span>
+              <strong>Not provided</strong>
+            </div>
+
+            <div>
+              <span>Home address</span>
+              <strong>Not provided</strong>
+            </div>
+
+          </div>
+        </article>
+
+      </section>
+
+      <footer class="page-footer">
+        <span>© MemberHub. All rights reserved.</span>
+        <span>Secure member portal <i class="status-dot"></i></span>
+      </footer>
+
+    </div>
+  </main>
+
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../member/memberDash.js"></script>
+</body>
+</html>

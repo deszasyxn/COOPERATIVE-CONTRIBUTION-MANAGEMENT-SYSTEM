@@ -4,9 +4,9 @@
 
 // ---- Settings: change these to match your backend ----------
 const CONFIG = {
-  endpoint: "/api/login",                       // your backend login URL
-  redirectTo: "/admin/adminDash.html",          // where to go after a successful login
-  timeoutMs: 10000                              // give up after 10 seconds
+  endpoint: "/api/auth/login",
+  redirectTo: "/member/memberDash.html",
+  timeoutMs: 10000
 };
 
 const LIMITS = {
