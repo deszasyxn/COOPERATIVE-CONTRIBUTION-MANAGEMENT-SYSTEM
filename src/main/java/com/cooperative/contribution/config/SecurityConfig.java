@@ -53,7 +53,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/", "/index.html", "/landing.css", "/landing.js",
                                 "/login&signup/**", "/member/**", "/admin/**", "/css/**", "/js/**").permitAll()
-                        .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/auth/me").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/auth/me",
+                                "/api/cooperatives/exists", "/api/signup", "/api/signup/complete").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/member/**").hasAnyRole("MEMBER", "ADMIN")

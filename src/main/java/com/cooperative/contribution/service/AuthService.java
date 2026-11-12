@@ -28,13 +28,14 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        String username = request.getUsername().trim();
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                    new UsernamePasswordAuthenticationToken(username, request.getPassword())
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            User user = userRepository.findByUsernameOrEmail(request.getUsername())
+            User user = userRepository.findByUsernameOrEmail(username)
                     .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid username or password."));
 
             String redirect = user.getRole().name().equals("ROLE_ADMIN")

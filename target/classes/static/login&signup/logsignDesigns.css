@@ -134,6 +134,25 @@ body {
   display: block;
 }
 
+.form-feedback {
+  margin: 0 0 14px;
+  color: var(--error);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.form-feedback.success {
+  color: #16794b;
+}
+
+.setup-copy {
+  margin: 0 0 18px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
 .toggle-pw {
   position: absolute;
   right: 14px;

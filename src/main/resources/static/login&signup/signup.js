@@ -7,7 +7,6 @@
 const CONFIG = {
   checkEndpoint: "/api/cooperatives/exists",   // GET ?name=...  ->  { "exists": true | false }
   signupEndpoint: "/api/signup",               // POST JSON
-  redirectTo: "login.html",                    // where to go after a successful signup
   debounceMs: 500,                             // wait after typing stops before checking
   timeoutMs: 10000
 };
@@ -46,20 +45,22 @@ const submitBtn  = form.querySelector(".btn");
 // state: "invalid" | "checking" | "available" | "clear"
 function setFieldState(input, state, message) {
   const field = input.closest(".field");
+  if (!field) return;
   const err = field.querySelector(".error");
   field.classList.remove("invalid", "checking", "available");
   if (state !== "clear") field.classList.add(state);
-  if (message) err.textContent = message;
+  if (message && err) err.textContent = message;
 }
 
-function showFormError(message) {
-  let box = form.querySelector(".form-error");
+function showFormError(message, success = false) {
+  let box = form.querySelector(".form-feedback");
   if (!box) {
     box = document.createElement("p");
-    box.className = "form-error";
-    box.setAttribute("role", "alert");
+    box.className = "form-feedback";
     submitBtn.before(box);
   }
+  box.classList.toggle("success", success);
+  box.setAttribute("role", success ? "status" : "alert");
   box.textContent = message;
   box.hidden = !message;
 }
@@ -82,9 +83,8 @@ async function cooperativeExists(name) {
       credentials: "same-origin",
       signal: controller.signal
     });
-    if (!res.ok) throw new Error("Bad response: " + res.status);
-
     const data = await res.json();
+    if (!res.ok) throw new Error(data.message || "Unable to check this cooperative name.");
     if (typeof data.exists !== "boolean") throw new Error("Unexpected response");
     return data.exists;
   } finally {
@@ -124,7 +124,7 @@ async function runCheck() {
   } catch (err) {
     if (err.name === "AbortError" && sanitizeCoop(coopInput.value) !== name) return "stale";
     lastResult = null;
-    setFieldState(coopInput, "invalid", "We couldn't verify this name. Check your connection and try again.");
+    setFieldState(coopInput, "invalid", err.message || "We couldn't verify this name. Check your connection and try again.");
     return "error";
   }
 }
@@ -206,8 +206,16 @@ form.addEventListener("submit", async function (e) {
       credentials: "same-origin"
     });
 
+    let responseData = {};
+    try { responseData = await res.json(); } catch (_) { /* response had no JSON body */ }
+
     if (res.ok) {
-      window.location.href = CONFIG.redirectTo;
+      if (!responseData.redirect) {
+        showFormError("Signup succeeded, but the password setup link was not returned. Contact the administrator.");
+        return;
+      }
+      window.location.assign(responseData.redirect);
+      return;
     } else if (res.status === 409) {
       // Someone registered this name between our check and the submit
       lastResult = { name: sanitizeCoop(coopInput.value), exists: true };
@@ -215,7 +223,7 @@ form.addEventListener("submit", async function (e) {
     } else if (res.status === 429) {
       showFormError("Too many attempts. Please wait a moment and try again.");
     } else {
-      showFormError("Something went wrong on our end. Please try again.");
+      showFormError(responseData.message || "Something went wrong on our end. Please try again.");
     }
   } catch (err) {
     showFormError("Can't reach the server. Check your connection and try again.");

@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.cooperative.contribution.ApiSecurityIntegrationTest
 -------------------------------------------------------------------------------
-Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.061 s -- in com.cooperative.contribution.ApiSecurityIntegrationTest
+Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.229 s -- in com.cooperative.contribution.ApiSecurityIntegrationTest
