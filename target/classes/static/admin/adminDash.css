@@ -434,3 +434,185 @@ a:focus-visible, button:focus-visible {
   html { scroll-behavior: auto; }
   .sidebar, .skip, .stat-link .ic { transition: none; }
 }
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(10, 28, 74, 0.45);
+}
+.modal-overlay[hidden] { display: none; }
+
+.modal {
+  position: fixed;
+  z-index: 45;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(90vw, 640px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgba(10, 28, 74, 0.25);
+  overflow: hidden;
+}
+.modal[hidden] { display: none; }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-header h3 { font-size: 1rem; font-weight: 700; }
+
+.modal-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+}
+.modal-close:hover { background: var(--blue-50); color: var(--ink); }
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ---------- Form ---------- */
+.form-group {
+  margin-bottom: 14px;
+}
+.form-group label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.86rem;
+  font-family: inherit;
+  color: var(--ink);
+  background: var(--white);
+}
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px var(--blue-100);
+}
+
+.form-error {
+  min-height: 1.2em;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  color: #d32f2f;
+}
+
+.btn-secondary {
+  padding: 10px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-secondary:hover { background: var(--blue-50); border-color: var(--blue-500); }
+
+/* ---------- Data Table ---------- */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+.data-table th,
+.data-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.data-table thead th {
+  font-weight: 700;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.data-table tbody tr:hover { background: var(--blue-50); }
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.status-active { background: #e6f7ed; color: #1b7a43; }
+.status-inactive { background: #fde8e8; color: #b91c1c; }
+.status-pending { background: #fff8e1; color: #b45309; }
+.status-scheduled { background: var(--blue-100); color: var(--blue-600); }
+.status-upcoming { background: #e8eaf6; color: #3949ab; }
+.status-paid { background: #e6f7ed; color: #1b7a43; }
+.status-overdue { background: #fde8e8; color: #b91c1c; }
+
+.table-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--white);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--blue-600);
+  cursor: pointer;
+}
+.table-action-btn:hover { background: var(--blue-50); border-color: var(--blue-500); }
+.table-action-btn.danger { color: #d32f2f; }
+.table-action-btn.danger:hover { background: #fde8e8; border-color: #d32f2f; }
+
+/* ---------- Loading state ---------- */
+.loading-text {
+  text-align: center;
+  padding: 24px;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+/* ---------- Modal responsive ---------- */
+@media (max-width: 600px) {
+  .modal { width: 95vw; max-height: 90vh; }
+  .modal-body { padding: 16px; }
+}

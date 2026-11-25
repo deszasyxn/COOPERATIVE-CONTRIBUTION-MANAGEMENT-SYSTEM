@@ -14,10 +14,8 @@ public class AdminMemberRequest {
     @NotBlank(message = "Email is required")
     private String email;
 
-    @NotBlank(message = "Username is required")
     private String username;
 
-    @NotBlank(message = "Password is required")
     private String password;
 
     private String phone;

@@ -9,17 +9,19 @@ public class AdminMemberDto {
     private String name;
     private String email;
     private String phone;
+    private String address;
     private MembershipStatus membershipStatus;
 
     public AdminMemberDto() {
     }
 
-    public AdminMemberDto(Long id, String memberNumber, String name, String email, String phone, MembershipStatus membershipStatus) {
+    public AdminMemberDto(Long id, String memberNumber, String name, String email, String phone, String address, MembershipStatus membershipStatus) {
         this.id = id;
         this.memberNumber = memberNumber;
         this.name = name;
         this.email = email;
         this.phone = phone;
+        this.address = address;
         this.membershipStatus = membershipStatus;
     }
 
@@ -61,6 +63,14 @@ public class AdminMemberDto {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public MembershipStatus getMembershipStatus() {

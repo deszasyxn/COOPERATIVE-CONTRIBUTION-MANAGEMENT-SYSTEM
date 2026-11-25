@@ -14,6 +14,7 @@ const CONFIG = {
 // Letters (any language), numbers, spaces and . , ' & ( ) -
 const COOP_PATTERN  = /^[\p{L}\p{N} .,'&()\-]+$/u;
 const ADMIN_PATTERN = /^[\p{L} .'\-]+$/u;
+const USERNAME_PATTERN = /^[A-Za-z0-9]{3,30}$/;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 // ---- Sanitizers --------------------------------------------
@@ -27,16 +28,19 @@ function cleanText(value) {
 
 const sanitizeCoop  = cleanText;
 const sanitizeAdmin = cleanText;
+const sanitizeUsername = function (v) { return cleanText(v).toLowerCase(); };
 const sanitizeEmail = function (v) { return cleanText(v).toLowerCase(); };
 
 function validCoop(v)  { return v.length >= 3 && v.length <= 100 && COOP_PATTERN.test(v); }
 function validAdmin(v) { return v.length >= 2 && v.length <= 80  && ADMIN_PATTERN.test(v); }
+function validUsername(v) { return USERNAME_PATTERN.test(v); }
 function validEmail(v) { return v.length <= 254 && EMAIL_PATTERN.test(v); }
 
 // ---- Elements ----------------------------------------------
 const form       = document.getElementById("signup-form");
 const coopInput  = form.elements["fullname"];     // Cooperative Name
 const adminInput = form.elements["adminname"];
+const usernameInput = form.elements["username"];
 const emailInput = form.elements["email"];
 const termsBox   = form.elements["terms"];
 const submitBtn  = form.querySelector(".btn");
@@ -156,7 +160,7 @@ coopInput.addEventListener("blur", function () {
 });
 
 // Clear errors on the other fields as the user types
-[adminInput, emailInput, termsBox].forEach(function (el) {
+[adminInput, usernameInput, emailInput, termsBox].forEach(function (el) {
   el.addEventListener("input", function () {
     setFieldState(el, "clear");
     showFormError("");
@@ -170,12 +174,15 @@ form.addEventListener("submit", async function (e) {
   clearTimeout(debounceTimer);
 
   const admin = sanitizeAdmin(adminInput.value);
+  const username = sanitizeUsername(usernameInput.value);
   const email = sanitizeEmail(emailInput.value);
 
   // Validate the simple fields first
   const adminBad = !validAdmin(admin);
+  const usernameBad = !validUsername(username);
   const emailBad = !validEmail(email);
   if (adminBad) setFieldState(adminInput, "invalid", "Enter the admin's name (letters only).");
+  if (usernameBad) setFieldState(usernameInput, "invalid", "Enter a username (3-30 characters, letters and numbers only).");
   if (emailBad) setFieldState(emailInput, "invalid", "Enter a valid email address.");
 
   const termsBad = !termsBox.checked;
@@ -188,7 +195,7 @@ form.addEventListener("submit", async function (e) {
     // Make sure the cooperative name is checked right now
     const status = await runCheck();
     if (status === "stale") return;
-    if (status !== "available" || adminBad || emailBad || termsBad) return;
+    if (status !== "available" || adminBad || usernameBad || emailBad || termsBad) return;
 
     submitBtn.textContent = "SIGNING UP...";
 
@@ -200,6 +207,7 @@ form.addEventListener("submit", async function (e) {
       body: JSON.stringify({
         cooperativeName: sanitizeCoop(coopInput.value),
         adminName: admin,
+        username: username,
         email: email,
         agreedToTerms: true
       }),

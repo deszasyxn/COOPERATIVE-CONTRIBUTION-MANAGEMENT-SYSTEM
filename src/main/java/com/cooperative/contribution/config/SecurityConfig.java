@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authenticationProvider(authenticationProvider)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/landing.css", "/landing.js",
+                        .requestMatchers(HttpMethod.GET, "/", "/index.html", "/favicon.ico", "/landing.css", "/landing.js",
                                 "/login&signup/**", "/member/**", "/admin/**", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/api/auth/login", "/api/auth/logout", "/api/auth/me",
                                 "/api/cooperatives/exists", "/api/signup", "/api/signup/complete").permitAll()

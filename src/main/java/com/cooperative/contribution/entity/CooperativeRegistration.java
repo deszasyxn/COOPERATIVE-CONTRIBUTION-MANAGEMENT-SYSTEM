@@ -26,6 +26,9 @@ public class CooperativeRegistration {
     @Column(nullable = false, length = 254)
     private String email;
 
+    @Column(name = "username", nullable = false, length = 30)
+    private String username;
+
     @Column(name = "terms_accepted", nullable = false)
     private boolean termsAccepted;
 
@@ -45,12 +48,13 @@ public class CooperativeRegistration {
     }
 
     public CooperativeRegistration(String cooperativeName, String normalizedName, String adminName,
-                                  String email, boolean termsAccepted, String setupTokenHash,
+                                  String email, String username, boolean termsAccepted, String setupTokenHash,
                                   LocalDateTime setupTokenExpiresAt) {
         this.cooperativeName = cooperativeName;
         this.normalizedName = normalizedName;
         this.adminName = adminName;
         this.email = email;
+        this.username = username;
         this.termsAccepted = termsAccepted;
         this.status = "AWAITING_PASSWORD";
         this.setupTokenHash = setupTokenHash;
@@ -78,6 +82,10 @@ public class CooperativeRegistration {
         return email;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
     public boolean isTermsAccepted() {
         return termsAccepted;
     }
@@ -95,11 +103,12 @@ public class CooperativeRegistration {
     }
 
     public void renewPasswordSetup(String cooperativeName, String adminName, String email,
-                                   boolean termsAccepted, String setupTokenHash,
+                                   String username, boolean termsAccepted, String setupTokenHash,
                                    LocalDateTime setupTokenExpiresAt) {
         this.cooperativeName = cooperativeName;
         this.adminName = adminName;
         this.email = email;
+        this.username = username;
         this.termsAccepted = termsAccepted;
         this.status = "AWAITING_PASSWORD";
         this.setupTokenHash = setupTokenHash;

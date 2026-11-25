@@ -45,6 +45,11 @@ public class AdminController {
         return ResponseEntity.ok(adminService.updateMemberStatus(id, request));
     }
 
+    @GetMapping("/payments")
+    public ResponseEntity<List<PaymentDto>> getAllPayments() {
+        return ResponseEntity.ok(adminService.getAllPayments());
+    }
+
     @PostMapping("/payments")
     public ResponseEntity<PaymentDto> createPayment(@Valid @RequestBody AdminPaymentRequest request) {
         return ResponseEntity.ok(adminService.createPayment(request));

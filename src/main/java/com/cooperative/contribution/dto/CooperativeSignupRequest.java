@@ -19,6 +19,11 @@ public class CooperativeSignupRequest {
     private String adminName;
 
     @NotBlank
+    @Size(min = 3, max = 30)
+    @Pattern(regexp = "^[A-Za-z0-9]+$")
+    private String username;
+
+    @NotBlank
     @Email
     @Size(max = 254)
     private String email;
@@ -40,6 +45,14 @@ public class CooperativeSignupRequest {
 
     public void setAdminName(String adminName) {
         this.adminName = adminName;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {

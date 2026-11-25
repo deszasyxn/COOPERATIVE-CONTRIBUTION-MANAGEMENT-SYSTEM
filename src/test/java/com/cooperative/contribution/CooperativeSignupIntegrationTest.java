@@ -60,6 +60,7 @@ class CooperativeSignupIntegrationTest {
                                 {
                                   "cooperativeName": "San Juan Cooperative",
                                   "adminName": "Alex Admin",
+                                  "username": "alexadmin",
                                   "email": "alex@example.com",
                                   "agreedToTerms": true
                                 }
@@ -89,7 +90,7 @@ class CooperativeSignupIntegrationTest {
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
-                                "username", "Alex@Example.com",
+                                "username", "alexadmin",
                                 "password", password
                         ))))
                 .andExpect(status().isOk())
@@ -128,6 +129,7 @@ class CooperativeSignupIntegrationTest {
                                 {
                                   "cooperativeName": "San Juan Cooperative",
                                   "adminName": "Alex Admin",
+                                  "username": "alexadmin",
                                   "email": "alex@example.com",
                                   "agreedToTerms": true
                                 }
@@ -140,7 +142,8 @@ class CooperativeSignupIntegrationTest {
                                 {
                                   "cooperativeName": " san   juan cooperative ",
                                   "adminName": "Alex Admin",
-                                  "email": "alex@example.com",
+                                  "username": "alexadmin2",
+                                  "email": "alex2@example.com",
                                   "agreedToTerms": true
                                 }
                                 """))

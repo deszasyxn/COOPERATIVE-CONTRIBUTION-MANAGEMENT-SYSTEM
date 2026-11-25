@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -52,18 +53,28 @@ public class AdminService {
     }
 
     public AdminMemberDto createMember(AdminMemberRequest request) {
-        userRepository.findByUsername(request.getUsername())
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Username is required for new members.");
+        }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Password is required for new members.");
+        }
+
+        String username = request.getUsername().trim().toLowerCase(Locale.ROOT);
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+
+        userRepository.findByUsername(username)
                 .ifPresent(existing -> {
                     throw new ApiException(HttpStatus.CONFLICT, "Username already exists.");
                 });
-        userRepository.findByEmail(request.getEmail())
+        userRepository.findByEmail(email)
                 .ifPresent(existing -> {
                     throw new ApiException(HttpStatus.CONFLICT, "Email already exists.");
                 });
 
         User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
+        user.setUsername(username);
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.ROLE_MEMBER);
         user.setEnabled(true);
@@ -100,20 +111,22 @@ public class AdminService {
             member.setMembershipStatus(request.getMembershipStatus());
         }
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
-            userRepository.findByEmail(request.getEmail())
+            String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+            userRepository.findByEmail(email)
                     .filter(existing -> !existing.getId().equals(user.getId()))
                     .ifPresent(existing -> {
                         throw new ApiException(HttpStatus.CONFLICT, "Email already exists.");
                     });
-            user.setEmail(request.getEmail());
+            user.setEmail(email);
         }
         if (request.getUsername() != null && !request.getUsername().isBlank()) {
-            userRepository.findByUsername(request.getUsername())
+            String username = request.getUsername().trim().toLowerCase(Locale.ROOT);
+            userRepository.findByUsername(username)
                     .filter(existing -> !existing.getId().equals(user.getId()))
                     .ifPresent(existing -> {
                         throw new ApiException(HttpStatus.CONFLICT, "Username already exists.");
                     });
-            user.setUsername(request.getUsername());
+            user.setUsername(username);
         }
 
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
@@ -192,6 +205,12 @@ public class AdminService {
         return toPaymentDto(payment);
     }
 
+    public List<PaymentDto> getAllPayments() {
+        return paymentRepository.findAllByOrderByDueDateDesc().stream()
+                .map(this::toPaymentDto)
+                .collect(Collectors.toList());
+    }
+
     public AdminReportDto getReport() {
         long totalMembers = memberRepository.count();
         long upcomingPaymentCount = paymentRepository.findAll().stream()
@@ -219,6 +238,7 @@ public class AdminService {
                 member.getName(),
                 member.getUser().getEmail(),
                 member.getPhone(),
+                member.getAddress(),
                 member.getMembershipStatus()
         );
     }

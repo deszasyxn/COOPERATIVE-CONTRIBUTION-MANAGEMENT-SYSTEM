@@ -58,6 +58,7 @@ public class CooperativeRegistrationService {
         String name = request.getCooperativeName().trim().replaceAll("\\s+", " ");
         String normalizedName = normalize(name);
         String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String username = request.getUsername().trim().toLowerCase(Locale.ROOT);
         logger.debug("Processing cooperative registration submission");
         CooperativeRegistration registration = registrationRepository.findByNormalizedName(normalizedName)
                 .orElse(null);
@@ -66,6 +67,9 @@ public class CooperativeRegistrationService {
         }
         if (userRepository.findByUsernameOrEmail(email).isPresent()) {
             throw new ApiException(HttpStatus.CONFLICT, "An account already exists for this email address.");
+        }
+        if (userRepository.findByUsername(username).isPresent()) {
+            throw new ApiException(HttpStatus.CONFLICT, "This username is already taken.");
         }
 
         String setupToken = generateSetupToken();
@@ -78,6 +82,7 @@ public class CooperativeRegistrationService {
                     normalizedName,
                     adminName,
                     email,
+                    username,
                     request.isAgreedToTerms(),
                     setupTokenHash,
                     setupExpiresAt
@@ -87,6 +92,7 @@ public class CooperativeRegistrationService {
                     name,
                     adminName,
                     email,
+                    username,
                     request.isAgreedToTerms(),
                     setupTokenHash,
                     setupExpiresAt
@@ -133,11 +139,12 @@ public class CooperativeRegistrationService {
         }
 
         String email = registration.getEmail();
+        String username = registration.getUsername();
         if (userRepository.findByUsernameOrEmail(email).isPresent()) {
             throw new ApiException(HttpStatus.CONFLICT, "An account already exists for this email address.");
         }
 
-        User admin = new User(email, email, passwordEncoder.encode(request.getPassword()), Role.ROLE_ADMIN);
+        User admin = new User(username, email, passwordEncoder.encode(request.getPassword()), Role.ROLE_ADMIN);
         try {
             userRepository.saveAndFlush(admin);
         } catch (DataIntegrityViolationException ex) {

@@ -155,8 +155,26 @@ function updateDashboardCards(dashboard) {
 
 async function loadMemberDashboard() {
   try {
-    const user = await apiFetch("/api/auth/me");
-    if (!user) return;
+    let user = await apiFetch("/api/auth/me");
+
+    // If backend session expired, check localStorage for cached auth
+    if (!user) {
+      try {
+        const stored = JSON.parse(localStorage.getItem("auth") || "null");
+        if (stored && stored.username) {
+          user = stored;
+        } else {
+          window.location.href = "/login&signup/login.html";
+          return;
+        }
+      } catch(_) {
+        window.location.href = "/login&signup/login.html";
+        return;
+      }
+    } else {
+      // Sync localStorage with the confirmed backend user
+      try { localStorage.setItem("auth", JSON.stringify(user)); } catch(_){}
+    }
 
     const dashboard = await apiFetch("/api/member/dashboard");
     if (!dashboard) return;
@@ -245,12 +263,15 @@ document.getElementById("downloadBtn").addEventListener("click", () => {
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   try {
     showToast("Logging out...");
+    // Clear local auth cache
+    try { localStorage.removeItem("auth"); } catch(_){}
     await fetch("/api/auth/logout", {
       method: "POST",
       credentials: "same-origin"
     });
     window.location.href = "/login&signup/login.html";
   } catch (error) {
+    try { localStorage.removeItem("auth"); } catch(_){}
     window.location.href = "/login&signup/login.html";
   }
 });

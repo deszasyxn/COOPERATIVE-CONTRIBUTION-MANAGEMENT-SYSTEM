@@ -17,4 +17,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findFirstByMemberAndStatusNotOrderByDueDateAsc(Member member, PaymentStatus status);
 
     long countByMemberAndStatus(Member member, PaymentStatus status);
+
+    List<Payment> findAllByOrderByDueDateDesc();
 }

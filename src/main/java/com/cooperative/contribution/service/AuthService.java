@@ -16,6 +16,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class AuthService {
 
@@ -28,7 +30,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        String username = request.getUsername().trim();
+        String username = request.getUsername().trim().toLowerCase(Locale.ROOT);
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, request.getPassword())

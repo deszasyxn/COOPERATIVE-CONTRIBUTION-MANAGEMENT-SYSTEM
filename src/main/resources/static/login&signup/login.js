@@ -146,6 +146,17 @@ form.addEventListener("submit", async function (e) {
     const result = await sendLogin({ username: username, password: password, remember: remember });
 
     if (result.ok) {
+      // Store auth state in localStorage so the dashboard remembers the login
+      if (result.data) {
+        try {
+          localStorage.setItem("auth", JSON.stringify({
+            username: result.data.username,
+            email: result.data.email,
+            role: result.data.role,
+            redirect: result.data.redirect
+          }));
+        } catch (_) { /* localStorage unavailable, continue anyway */ }
+      }
       window.location.href = (result.data && result.data.redirect) || CONFIG.redirectTo;
       return;
     }
