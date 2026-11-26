@@ -91,13 +91,15 @@
 
         <div class="profile-wrap">
           <button class="profile" id="profile-btn" aria-haspopup="true" aria-expanded="false" aria-controls="profile-menu">
-            <span class="avatar"><svg class="ic"><use href="#i-user"/></svg></span>
+            <span class="avatar"><svg class="ic avatar-placeholder"><use href="#i-user"/></svg><img class="profile-photo" alt="" hidden></span>
             <span class="profile-name">Admin</span>
             <svg class="ic chev"><use href="#i-chevron"/></svg>
           </button>
           <div class="menu" id="profile-menu" hidden>
             <a href="#"><svg class="ic"><use href="#i-user"/></svg>My profile</a>
-            <a href="#"><svg class="ic"><use href="#i-logout"/></svg>Log out</a>
+            <button type="button" class="profile-photo-action" id="change-profile-photo"><svg class="ic"><use href="#i-user"/></svg>Change profile photo</button>
+            <input id="profile-photo-input" type="file" accept="image/png,image/jpeg" hidden>
+            <a href="#" id="profile-logout"><svg class="ic"><use href="#i-logout"/></svg>Log out</a>
           </div>
         </div>
       </div>
@@ -278,7 +280,10 @@
         </div>
         <div class="form-group">
           <label for="member-form-password">Password</label>
-          <input type="password" id="member-form-password" required>
+          <div class="password-field">
+            <input type="password" id="member-form-password" required>
+            <button type="button" class="password-toggle" id="member-password-toggle" aria-controls="member-form-password" aria-pressed="false">Show</button>
+          </div>
         </div>
         <div class="form-group">
           <label for="member-form-phone">Phone</label>

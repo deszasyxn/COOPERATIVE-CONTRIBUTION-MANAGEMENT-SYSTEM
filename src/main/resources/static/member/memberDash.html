@@ -116,7 +116,7 @@
         <div class="top-divider"></div>
 
         <button class="user-menu" id="userMenu">
-          <span class="mini-avatar">MN</span>
+          <span class="mini-avatar"><span class="avatar-initials">MN</span><img class="profile-photo" alt="" hidden></span>
 
           <span class="user-menu-copy">
             <strong>Member Name</strong>
@@ -159,7 +159,7 @@
 
         <div class="profile-main">
 
-          <div class="avatar-large">MN</div>
+          <div class="avatar-large"><span class="avatar-initials">MN</span><img class="profile-photo" alt="" hidden></div>
 
           <div>
             <div class="member-label">
@@ -178,9 +178,11 @@
 
         </div>
 
-        <button class="outline-button" data-goto="profile">
-          View profile <span>↗</span>
-        </button>
+        <div class="profile-banner-actions">
+          <button class="outline-button" data-goto="profile">View profile <span>↗</span></button>
+          <button class="outline-button" type="button" id="change-profile-photo">Change photo</button>
+          <input id="profile-photo-input" type="file" accept="image/png,image/jpeg" hidden>
+        </div>
 
       </section>
 
@@ -437,6 +439,16 @@
     </div>
   </main>
 
+</div>
+
+<div class="notification-overlay" id="notification-overlay" hidden>
+  <section class="notification-dialog" role="dialog" aria-modal="true" aria-labelledby="notification-title">
+    <header class="notification-dialog-header">
+      <h2 id="notification-title">Notifications</h2>
+      <button class="notification-close" id="notification-close" type="button" aria-label="Close notifications">&times;</button>
+    </header>
+    <div class="notification-list" id="notification-list" aria-live="polite"></div>
+  </section>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

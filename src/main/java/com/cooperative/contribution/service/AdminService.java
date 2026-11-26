@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -203,6 +205,31 @@ public class AdminService {
         Notification notification = new Notification(payment.getMember(), "Payment confirmed", "Payment " + payment.getReferenceNumber() + " has been confirmed.", NotificationType.PAYMENT);
         notificationRepository.save(notification);
         return toPaymentDto(payment);
+    }
+
+    public String issueReceipt(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Payment not found."));
+        if (payment.getStatus() != PaymentStatus.PAID) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "A receipt can only be issued for a confirmed payment.");
+        }
+
+        Member member = payment.getMember();
+        String receipt = String.join("\n",
+                "COOPERATIVE CONTRIBUTION RECEIPT",
+                "Receipt number: " + payment.getReferenceNumber(),
+                "Member: " + member.getName(),
+                "Member number: " + member.getMemberNumber(),
+                "Description: " + payment.getDescription(),
+                "Amount received: PHP " + payment.getAmount().setScale(2, RoundingMode.HALF_UP).toPlainString(),
+                "Payment status: " + payment.getStatus(),
+                "Receipt issued: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")),
+                "",
+                "This receipt confirms that the payment above was recorded by the cooperative.",
+                "");
+
+        notificationRepository.save(new Notification(member, "Payment receipt issued", receipt, NotificationType.PAYMENT));
+        return receipt;
     }
 
     public List<PaymentDto> getAllPayments() {

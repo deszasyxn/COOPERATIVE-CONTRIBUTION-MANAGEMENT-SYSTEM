@@ -3,70 +3,143 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign Up</title>
-  <link rel="stylesheet" href="logsignDesigns.css">
+  <title>Sign Up | Cooperative Contribution Management System</title>
+  <link rel="stylesheet" href="auth.css">
 </head>
 <body>
-  <main class="page">
-    <header class="welcome">
-      <h1>Create Account</h1>
-      <p>Sign up to get started</p>
-    </header>
-
-    <section class="card">
-      <div class="avatar" aria-hidden="true">
-        <svg viewBox="0 0 100 100">
-          <circle cx="50" cy="38" r="15" fill="#3b82f6"/>
-          <path d="M20 100c0-24 13-38 30-38s30 14 30 38z" fill="#3b82f6"/>
+  <header class="auth-header">
+    <a href="../index.html" class="brand" aria-label="Cooperative Contribution Management System home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.2c2.6.2 4.5 2 4.5 4.8"/>
         </svg>
-      </div>
-      
-      <form id="signup-form" novalidate>
-        <!--Form input for Cooperative Name-->
-        <div class="field">
-          <div class="input-wrap">
-            <input type="text" id="fullname" name="fullname" placeholder="San Juan Cooperative" autocomplete="name" required>
-          </div>
-          <label for="fullname">Cooperative Name</label>
-          <span class="error">Enter your full name.</span>
-        </div>
+      </span>
+      <span class="brand-text">Cooperative Contribution<br>Management System</span>
+    </a>
+    <a class="back-home" href="../index.html">Back to home</a>
+  </header>
 
-        <!--Form for Admin name-->
-        <div class="field">
-            <div class="input-wrap">
-              <input type="text" id="adminname" name="adminname" placeholder="Admin Name" autocomplete="name" required>
+  <main class="page">
+    <div class="auth-layout">
+      <aside class="auth-promo">
+        <span class="promo-label">A clearer way to contribute</span>
+        <h1>Bring your<br>cooperative<br>together.</h1>
+        <p>Create your cooperative workspace to organize member records, contributions, payment schedules, and receipts.</p>
+        <div class="promo-note">
+          <span class="promo-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.2c2.6.2 4.5 2 4.5 4.8"/>
+            </svg>
+          </span>
+          <span><strong>Built for your community.</strong><br>Everything important, organized.</span>
+        </div>
+      </aside>
+
+      <div class="auth-content">
+        <header class="welcome">
+          <span class="form-kicker">Get started</span>
+          <h2>Create your account</h2>
+          <p>Set up your cooperative workspace.</p>
+        </header>
+
+        <section class="card">
+          <form id="signup-form" novalidate>
+            <div class="field">
+              <label for="fullname">Cooperative Name</label>
+              <div class="input-wrap">
+                <input type="text" id="fullname" name="fullname" placeholder="e.g. San Juan Cooperative" autocomplete="organization" required>
+              </div>
+              <span class="error">Enter your cooperative name.</span>
             </div>
-            <label for="adminname">Admin Name</label>
-            <span class="error">Enter the admin's name.</span>
-        </div>
 
-        <div class="field">
-          <div class="input-wrap">
-            <input type="text" id="username" name="username" placeholder="Choose a username" autocomplete="username" required>
-          </div>
-          <label for="username">Username</label>
-          <span class="error">Enter a username (3-30 characters, letters and numbers only).</span>
-        </div>
+            <div class="field">
+              <label for="adminname">Full Name</label>
+              <div class="input-wrap">
+                <input type="text" id="adminname" name="adminname" placeholder="Enter your full name" autocomplete="name" required>
+              </div>
+              <span class="error">Enter the admin's full name.</span>
+            </div>
 
-        <div class="field">
-          <div class="input-wrap">
-            <input type="email" id="email" name="email" placeholder="name@email.com" autocomplete="email" required>
-          </div>
-          <label for="email">Email</label>
-          <span class="error">Enter a valid email address.</span>
-        </div>
+            <div class="field">
+              <label for="username">Username</label>
+              <div class="input-wrap">
+                <input type="text" id="username" name="username" placeholder="Choose a username" autocomplete="username" required>
+              </div>
+              <span class="error">Enter a username (3-30 characters, letters and numbers only).</span>
+            </div>
 
-        <div class="row">
-          <label class="check terms">
-            <input type="checkbox" name="terms" id="terms" required>
-            <span>I agree to the <a href="#">Terms and Conditions</a></span>
-          </label>
-        </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <div class="input-wrap">
+                <input type="email" id="email" name="email" placeholder="name@email.com" autocomplete="email" required>
+              </div>
+              <span class="error">Enter a valid email address.</span>
+            </div>
 
-        <button type="submit" class="btn">SIGN UP</button>
-      </form>
-    </section>
+            <div class="row">
+              <div class="check terms">
+                <input type="checkbox" name="terms" id="terms" required>
+                <label for="terms">I agree to the</label>
+                <a href="#terms-and-conditions" id="terms-link">Terms and Conditions</a>
+              </div>
+            </div>
+
+            <button type="submit" class="btn">SIGN UP</button>
+          </form>
+          <p class="switch">Already have an account? <a href="login.html">Log in</a></p>
+        </section>
+      </div>
+    </div>
   </main>
+
+  <dialog class="terms-dialog" id="terms-dialog" aria-labelledby="terms-title" aria-describedby="terms-intro">
+    <div class="terms-card">
+      <header class="terms-header">
+        <div>
+          <span class="form-kicker">Account information</span>
+          <h2 id="terms-title">Terms and Conditions</h2>
+        </div>
+        <form method="dialog">
+          <button type="submit" class="terms-close" aria-label="Close terms and conditions">&times;</button>
+        </form>
+      </header>
+      <div class="terms-content">
+        <p id="terms-intro">Please read these terms before creating a cooperative workspace. By signing up and selecting the agreement checkbox, you confirm that you accept these terms.</p>
+
+        <section>
+          <h3>1. Account information and access</h3>
+          <p>Provide accurate, current information when creating an account and keep it up to date. You are responsible for protecting your sign-in details and for activity performed through your account. Notify your cooperative administrator if you believe your account has been accessed without permission.</p>
+        </section>
+
+        <section>
+          <h3>2. Appropriate use</h3>
+          <p>Use the system only for legitimate cooperative administration, including maintaining member details, contribution records, payment records, and receipts. Do not misuse the service, attempt to access another person’s account or information, or interfere with the system.</p>
+        </section>
+
+        <section>
+          <h3>3. Cooperative records</h3>
+          <p>Users must take reasonable care to enter and review accurate information. Members should contact their cooperative if a contribution or payment record appears incorrect. A record or receipt in the system is not a substitute for confirmation under the cooperative’s own payment and record-keeping procedures.</p>
+        </section>
+
+        <section>
+          <h3>4. Member information</h3>
+          <p>Use member information only for cooperative purposes and only when authorized to do so. The cooperative and its administrators are responsible for ensuring that their collection and use of member information follows applicable privacy requirements and cooperative policies.</p>
+        </section>
+
+        <section>
+          <h3>5. Access and updates</h3>
+          <p>Access may be limited or suspended when needed to protect accounts, the service, or cooperative records. These terms may be updated as the service changes; the current version will be shown here.</p>
+        </section>
+
+        <p class="terms-note">These platform terms do not replace your cooperative’s bylaws, contribution rules, or any separate privacy notice. Refer to your cooperative’s official documents for those requirements.</p>
+      </div>
+      <footer class="terms-footer">
+        <form method="dialog">
+          <button type="submit" class="terms-dismiss">Close</button>
+        </form>
+      </footer>
+    </div>
+  </dialog>
 
   <script src="signup.js"></script>
 </body>

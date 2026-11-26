@@ -44,6 +44,13 @@ const usernameInput = form.elements["username"];
 const emailInput = form.elements["email"];
 const termsBox   = form.elements["terms"];
 const submitBtn  = form.querySelector(".btn");
+const termsLink = document.getElementById("terms-link");
+const termsDialog = document.getElementById("terms-dialog");
+
+termsLink.addEventListener("click", function (e) {
+  e.preventDefault();
+  termsDialog.showModal();
+});
 
 // ---- Field state helper ------------------------------------
 // state: "invalid" | "checking" | "available" | "clear"

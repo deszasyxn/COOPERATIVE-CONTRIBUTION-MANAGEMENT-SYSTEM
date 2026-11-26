@@ -42,6 +42,21 @@ function initialsFromName(name) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function loadProfilePhoto() {
+  document.querySelectorAll(".profile-photo").forEach((image) => {
+    const placeholder = image.parentElement.querySelector(".avatar-initials");
+    image.onload = () => {
+      image.hidden = false;
+      if (placeholder) placeholder.hidden = true;
+    };
+    image.onerror = () => {
+      image.hidden = true;
+      if (placeholder) placeholder.hidden = false;
+    };
+    image.src = "/api/profile/photo?v=" + Date.now();
+  });
+}
+
 async function apiFetch(url, options = {}) {
   const response = await fetch(url, {
     credentials: "same-origin",
@@ -73,6 +88,25 @@ async function apiFetch(url, options = {}) {
     return response.json();
   }
   return response.text();
+}
+
+async function updateNotificationCount() {
+  try {
+    const notifications = await apiFetch("/api/member/notifications/unread");
+    if (!Array.isArray(notifications)) return;
+
+    const count = notifications.length;
+    const badge = document.querySelector(".nav-link[data-page='notifications'] .nav-count");
+    const indicator = document.querySelector(".notification-button i");
+
+    if (badge) {
+      badge.textContent = count > 99 ? "99+" : String(count);
+      badge.hidden = count === 0;
+    }
+    if (indicator) indicator.hidden = count === 0;
+  } catch (error) {
+    console.error("Unable to load notification count.", error);
+  }
 }
 
 function updateDashboardCards(dashboard) {
@@ -183,8 +217,8 @@ async function loadMemberDashboard() {
 
     const fullName = dashboard.memberName || user.username || "Member Name";
     document.querySelector(".user-menu-copy strong").textContent = fullName;
-    document.querySelector(".mini-avatar").textContent = initialsFromName(fullName);
-    document.querySelector(".avatar-large").textContent = initialsFromName(fullName);
+    document.querySelector(".mini-avatar .avatar-initials").textContent = initialsFromName(fullName);
+    document.querySelector(".avatar-large .avatar-initials").textContent = initialsFromName(fullName);
     document.querySelector(".profile-main h2").textContent = fullName;
     document.getElementById("pageTitle").innerHTML = `Welcome back, ${fullName.split(" ")[0]} <span>✦</span>`;
 
@@ -194,7 +228,9 @@ async function loadMemberDashboard() {
       memberMeta.innerHTML = `Member ID <strong>#${memberNumber}</strong><span class="bullet">•</span> Active member`;
     }
 
+    loadProfilePhoto();
     updateDashboardCards(dashboard);
+    await updateNotificationCount();
   } catch (error) {
     showToast(error.message || "Unable to load dashboard data.");
   }
@@ -215,7 +251,9 @@ document.querySelectorAll("[data-page]").forEach((button) => {
       ? `Welcome back, ${memberState?.memberName?.split(" ")[0] || "Member"} <span>✦</span>`
       : pageNames[page];
 
-    if (page !== "overview") {
+    if (page === "notifications") {
+      openNotifications();
+    } else if (page !== "overview") {
       showToast(`${pageNames[page]} selected.`);
     }
 
@@ -235,6 +273,102 @@ document.querySelectorAll("[data-goto]").forEach((button) => {
 
 menuToggle.addEventListener("click", () => {
   sidebar.classList.toggle("open");
+});
+
+async function openNotifications() {
+  const overlay = document.getElementById("notification-overlay");
+  const list = document.getElementById("notification-list");
+  overlay.hidden = false;
+  list.textContent = "Loading notifications...";
+
+  try {
+    const notifications = await apiFetch("/api/member/notifications");
+    list.replaceChildren();
+    if (!Array.isArray(notifications) || notifications.length === 0) {
+      list.textContent = "No notifications yet.";
+      await updateNotificationCount();
+      return;
+    }
+
+    notifications.forEach((notification) => {
+      const card = document.createElement("article");
+      card.className = "notification-card";
+
+      const title = document.createElement("h3");
+      title.textContent = notification.title || "Notification";
+      card.appendChild(title);
+
+      if (notification.createdDate) {
+        const date = document.createElement("time");
+        date.dateTime = notification.createdDate;
+        date.textContent = new Date(notification.createdDate).toLocaleString();
+        card.appendChild(date);
+      }
+
+      const message = document.createElement("p");
+      message.textContent = notification.message || "";
+      card.appendChild(message);
+
+      if (notification.title === "Payment receipt issued") {
+        const download = document.createElement("button");
+        download.type = "button";
+        download.className = "notification-download";
+        download.textContent = "Download receipt (.txt)";
+        download.addEventListener("click", () => {
+          const blob = new Blob([notification.message || ""], { type: "text/plain;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "payment-receipt-" + notification.id + ".txt";
+          link.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+          showToast("Receipt downloaded.");
+        });
+        card.appendChild(download);
+      }
+
+      list.appendChild(card);
+    });
+
+    try {
+      await apiFetch("/api/member/notifications/read-all", { method: "PATCH" });
+      await updateNotificationCount();
+    } catch (error) {
+      console.error("Unable to mark notifications as read.", error);
+    }
+  } catch (error) {
+    list.textContent = error.message || "Unable to load notifications.";
+  }
+}
+
+function closeNotifications() {
+  document.getElementById("notification-overlay").hidden = true;
+}
+
+document.getElementById("notification-close").addEventListener("click", closeNotifications);
+document.getElementById("notification-overlay").addEventListener("click", (event) => {
+  if (event.target.id === "notification-overlay") closeNotifications();
+});
+
+const profilePhotoInput = document.getElementById("profile-photo-input");
+document.getElementById("change-profile-photo").addEventListener("click", () => profilePhotoInput.click());
+profilePhotoInput.addEventListener("change", async () => {
+  const file = profilePhotoInput.files[0];
+  profilePhotoInput.value = "";
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    await apiFetch("/api/profile/photo", { method: "POST", body: formData });
+    loadProfilePhoto();
+    showToast("Profile photo updated.");
+  } catch (error) {
+    showToast(error.message || "Unable to upload profile photo.");
+  }
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeNotifications();
 });
 
 document.getElementById("downloadBtn").addEventListener("click", () => {
@@ -279,5 +413,8 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 document.getElementById("userMenu").addEventListener("click", () => {
   showToast("Member account selected.");
 });
+
+window.setInterval(updateNotificationCount, 30000);
+window.addEventListener("focus", updateNotificationCount);
 
 loadMemberDashboard();

@@ -3,10 +3,14 @@ package com.cooperative.contribution.controller;
 import com.cooperative.contribution.dto.*;
 import com.cooperative.contribution.service.AdminService;
 import jakarta.validation.Valid;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -63,6 +67,18 @@ public class AdminController {
     @PostMapping("/payments/{id}/confirm")
     public ResponseEntity<PaymentDto> confirmPayment(@PathVariable Long id) {
         return ResponseEntity.ok(adminService.confirmPayment(id));
+    }
+
+    @PostMapping("/payments/{id}/receipt")
+    public ResponseEntity<byte[]> issueReceipt(@PathVariable Long id) {
+        String receipt = adminService.issueReceipt(id);
+        return ResponseEntity.ok()
+                .contentType(new MediaType("text", "plain", StandardCharsets.UTF_8))
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename("payment-receipt-" + id + ".txt", StandardCharsets.UTF_8)
+                        .build()
+                        .toString())
+                .body(receipt.getBytes(StandardCharsets.UTF_8));
     }
 
     @GetMapping("/reports")

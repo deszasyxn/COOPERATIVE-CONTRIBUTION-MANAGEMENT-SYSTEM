@@ -203,6 +203,7 @@ function showAddMemberForm() {
   document.getElementById("member-form-username").value = "";
   document.getElementById("member-form-password").value = "";
   document.getElementById("member-form-password").required = true;
+  setMemberPasswordVisibility(false);
   document.getElementById("member-form-phone").value = "";
   document.getElementById("member-form-address").value = "";
   document.getElementById("member-form-status").value = "ACTIVE";
@@ -220,12 +221,26 @@ function editMember(id) {
   document.getElementById("member-form-username").value = "";
   document.getElementById("member-form-password").value = "";
   document.getElementById("member-form-password").required = false;
+  setMemberPasswordVisibility(false);
   document.getElementById("member-form-phone").value = m.phone || "";
   document.getElementById("member-form-address").value = m.address || "";
   document.getElementById("member-form-status").value = m.membershipStatus || "ACTIVE";
   document.getElementById("member-form-error").textContent = "";
   openModal("modal-member-form");
 }
+
+function setMemberPasswordVisibility(isVisible) {
+  var passwordInput = document.getElementById("member-form-password");
+  var toggle = document.getElementById("member-password-toggle");
+  passwordInput.type = isVisible ? "text" : "password";
+  toggle.textContent = isVisible ? "Hide" : "Show";
+  toggle.setAttribute("aria-pressed", String(isVisible));
+}
+
+document.getElementById("member-password-toggle").addEventListener("click", function () {
+  var passwordInput = document.getElementById("member-form-password");
+  setMemberPasswordVisibility(passwordInput.type === "password");
+});
 
 function submitMemberForm(e) {
   e.preventDefault();
@@ -345,7 +360,7 @@ function loadPaymentHistory() {
         '<td>' + escapeHtml(p.dueDate || "\u2014") + '</td>' +
         '<td>' + statusBadge(p.status) + '</td>' +
         '<td>' +
-          (p.status !== "PAID" ? '<button class="table-action-btn" onclick="confirmPayment(' + p.id + ')">Confirm</button>' : '') +
+          (p.status === "PAID" ? '<button class="table-action-btn" onclick="issueReceipt(' + p.id + ')">Issue receipt</button>' : '<button class="table-action-btn" onclick="confirmPayment(' + p.id + ')">Confirm</button>') +
         '</td>' +
       '</tr>';
     });
@@ -361,6 +376,37 @@ function confirmPayment(id) {
     loadStats();
   }).catch(function (err) {
     alert("Failed to confirm payment: " + (err.message || "Unknown error"));
+  });
+}
+
+function issueReceipt(id) {
+  fetch("/api/admin/payments/" + id + "/receipt", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { Accept: "text/plain" }
+  }).then(function (response) {
+    if (response.status === 401) {
+      window.location.href = "/login&signup/login.html";
+      throw new Error("Your session has expired.");
+    }
+    if (!response.ok) {
+      return response.json().then(function (error) {
+        throw new Error(error.message || "Failed to issue receipt.");
+      }, function () {
+        throw new Error("Failed to issue receipt.");
+      });
+    }
+    return response.blob();
+  }).then(function (blob) {
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "payment-receipt-" + id + ".txt";
+    link.click();
+    window.setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    alert("Receipt downloaded and sent to the member's account.");
+  }).catch(function (err) {
+    alert(err.message || "Failed to issue receipt.");
   });
 }
 
@@ -460,6 +506,45 @@ document.getElementById("btn-add-member").addEventListener("click", showAddMembe
 document.getElementById("member-form").addEventListener("submit", submitMemberForm);
 document.getElementById("payment-form").addEventListener("submit", submitPaymentForm);
 
+// ---- Profile picture ---------------------------------------
+var profilePhotoInput = document.getElementById("profile-photo-input");
+var profilePhoto = document.querySelector(".avatar .profile-photo");
+var profilePlaceholder = document.querySelector(".avatar-placeholder");
+
+function loadProfilePhoto() {
+  profilePhoto.onload = function () {
+    profilePhoto.hidden = false;
+    profilePlaceholder.hidden = true;
+  };
+  profilePhoto.onerror = function () {
+    profilePhoto.hidden = true;
+    profilePlaceholder.hidden = false;
+  };
+  profilePhoto.src = "/api/profile/photo?v=" + Date.now();
+}
+
+document.getElementById("change-profile-photo").addEventListener("click", function () {
+  setProfileMenu(false);
+  profilePhotoInput.click();
+});
+
+profilePhotoInput.addEventListener("change", function () {
+  var file = profilePhotoInput.files[0];
+  profilePhotoInput.value = "";
+  if (!file) return;
+
+  var formData = new FormData();
+  formData.append("file", file);
+  api("/api/profile/photo", { method: "POST", body: formData })
+    .then(function () {
+      loadProfilePhoto();
+      alert("Profile photo updated.");
+    })
+    .catch(function (error) {
+      alert(error.message || "Unable to upload profile photo.");
+    });
+});
+
 // ---- Wire up logout buttons --------------------------------
 document.querySelectorAll(".logout").forEach(function (btn) {
   btn.addEventListener("click", function (e) {
@@ -469,14 +554,11 @@ document.querySelectorAll(".logout").forEach(function (btn) {
 });
 
 // Profile menu logout
-var profileLogout = profileMenu.querySelector("a[href='#']");
-if (profileLogout && profileLogout.textContent.trim() === "Log out") {
-  profileLogout.addEventListener("click", function (e) {
-    e.preventDefault();
-    setProfileMenu(false);
-    logout();
-  });
-}
+document.getElementById("profile-logout").addEventListener("click", function (e) {
+  e.preventDefault();
+  setProfileMenu(false);
+  logout();
+});
 
 // ---- Initialize dashboard ----------------------------------
 (function init() {
@@ -490,6 +572,7 @@ if (profileLogout && profileLogout.textContent.trim() === "Log out") {
       if (nameEl && user.username) nameEl.textContent = user.username;
       var welcomeH1 = document.querySelector(".welcome h1");
       if (welcomeH1 && user.username) welcomeH1.textContent = "Welcome, " + user.username + "!";
+      loadProfilePhoto();
       // Dashboard is ready — load data
       loadStats();
       loadMembers();

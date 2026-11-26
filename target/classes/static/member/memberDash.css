@@ -282,12 +282,23 @@ body {
 
 .mini-avatar,
 .avatar-large {
+  position: relative;
+  overflow: hidden;
   border-radius: 50%;
   background: #e4efff;
   color: #3978d5;
   display: grid;
   place-items: center;
   font-weight: 800;
+}
+
+.profile-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 .mini-avatar {
@@ -438,6 +449,12 @@ body {
 
 .bullet {
   padding: 0 6px;
+}
+
+.profile-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .outline-button {
@@ -1082,6 +1099,10 @@ td strong {
     flex-direction: column;
   }
 
+  .profile-banner-actions {
+    flex-wrap: wrap;
+  }
+
   .profile-main {
     gap: 10px;
   }
@@ -1093,4 +1114,96 @@ td strong {
   .topbar-left {
     gap: 9px;
   }
+}
+
+.notification-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 32, 54, .52);
+}
+
+.notification-overlay[hidden] {
+  display: none;
+}
+
+.notification-dialog {
+  width: min(620px, 100%);
+  max-height: min(80vh, 720px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(15, 32, 54, .25);
+}
+
+.notification-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.notification-dialog-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.notification-close {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 26px;
+  line-height: 1;
+}
+
+.notification-list {
+  display: grid;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 18px 22px 22px;
+}
+
+.notification-card {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.notification-card h3 {
+  margin: 0 0 5px;
+  font-size: 14px;
+}
+
+.notification-card time {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.notification-card p {
+  margin: 12px 0 0;
+  color: #536176;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.notification-download {
+  margin-top: 12px;
+  padding: 9px 13px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--navy);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
 }
