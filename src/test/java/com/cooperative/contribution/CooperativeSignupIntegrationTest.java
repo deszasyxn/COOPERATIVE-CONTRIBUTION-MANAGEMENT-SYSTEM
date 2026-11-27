@@ -44,8 +44,8 @@ class CooperativeSignupIntegrationTest {
 
     @BeforeEach
     void cleanRegistrations() {
-        registrationRepository.deleteAll();
         userRepository.deleteAll();
+        registrationRepository.deleteAll();
     }
 
     @Test
@@ -101,7 +101,44 @@ class CooperativeSignupIntegrationTest {
         MockHttpSession session = (MockHttpSession) loginResult.getRequest().getSession(false);
         mockMvc.perform(get("/api/auth/me").session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("alex@example.com"));
+                .andExpect(jsonPath("$.email").value("alex@example.com"))
+                .andExpect(jsonPath("$.organizationName").value("San Juan Cooperative"));
+
+        mockMvc.perform(post("/api/admin/members")
+                        .session(session)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Jordan Member",
+                                  "email": "jordan@example.com",
+                                  "username": "jordanmember",
+                                  "password": "MemberPassword123",
+                                  "membershipStatus": "ACTIVE"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organizationName").value("San Juan Cooperative"));
+
+        mockMvc.perform(get("/api/admin/members").session(session))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].organizationName").value("San Juan Cooperative"));
+
+        MvcResult memberLoginResult = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "username", "jordanmember",
+                                "password", "MemberPassword123"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organizationName").value("San Juan Cooperative"))
+                .andReturn();
+        MockHttpSession memberSession = (MockHttpSession) memberLoginResult.getRequest().getSession(false);
+        mockMvc.perform(get("/api/member/dashboard").session(memberSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organizationName").value("San Juan Cooperative"));
+        mockMvc.perform(get("/api/member/profile").session(memberSession))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.organizationName").value("San Juan Cooperative"));
 
         assertTrue(userRepository.findByEmail("alex@example.com")
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))

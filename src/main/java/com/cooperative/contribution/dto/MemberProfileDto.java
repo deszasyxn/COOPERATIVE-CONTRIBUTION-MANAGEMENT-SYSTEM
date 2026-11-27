@@ -14,11 +14,17 @@ public class MemberProfileDto {
     private String address;
     private MembershipStatus membershipStatus;
     private LocalDate dateJoined;
+    private String organizationName = "No Organization Assigned";
 
     public MemberProfileDto() {
     }
 
     public MemberProfileDto(Long id, String memberNumber, String name, String email, String phone, String address, MembershipStatus membershipStatus, LocalDate dateJoined) {
+        this(id, memberNumber, name, email, phone, address, membershipStatus, dateJoined, "No Organization Assigned");
+    }
+
+    public MemberProfileDto(Long id, String memberNumber, String name, String email, String phone, String address,
+                            MembershipStatus membershipStatus, LocalDate dateJoined, String organizationName) {
         this.id = id;
         this.memberNumber = memberNumber;
         this.name = name;
@@ -27,6 +33,7 @@ public class MemberProfileDto {
         this.address = address;
         this.membershipStatus = membershipStatus;
         this.dateJoined = dateJoined;
+        this.organizationName = organizationName;
     }
 
     public Long getId() {
@@ -91,5 +98,13 @@ public class MemberProfileDto {
 
     public void setDateJoined(LocalDate dateJoined) {
         this.dateJoined = dateJoined;
+    }
+
+    public String getOrganizationName() {
+        return organizationName;
+    }
+
+    public void setOrganizationName(String organizationName) {
+        this.organizationName = organizationName;
     }
 }

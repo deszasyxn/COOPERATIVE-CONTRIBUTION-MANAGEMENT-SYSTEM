@@ -443,6 +443,10 @@ body {
   margin: 0;
 }
 
+.profile-banner p + p {
+  margin-top: 5px;
+}
+
 .profile-banner p strong {
   color: #426c9e;
 }

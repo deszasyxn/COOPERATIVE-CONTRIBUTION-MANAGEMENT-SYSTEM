@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,15 +25,17 @@ public class MemberService {
     private final ContributionRepository contributionRepository;
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final ContributionCalculationService contributionCalculationService;
 
     public MemberService(MemberRepository memberRepository, PaymentRepository paymentRepository,
                          ContributionRepository contributionRepository, NotificationRepository notificationRepository,
-                         UserRepository userRepository) {
+                         UserRepository userRepository, ContributionCalculationService contributionCalculationService) {
         this.memberRepository = memberRepository;
         this.paymentRepository = paymentRepository;
         this.contributionRepository = contributionRepository;
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.contributionCalculationService = contributionCalculationService;
     }
 
     public Member getCurrentMember() {
@@ -46,13 +47,12 @@ public class MemberService {
     public MemberDashboardDto getDashboard() {
         Member member = getCurrentMember();
         List<Payment> payments = paymentRepository.findByMemberOrderByDueDateAsc(member);
-        BigDecimal totalContributions = contributionRepository.sumAmountByMember(member);
-        if (totalContributions == null) {
-            totalContributions = BigDecimal.ZERO;
-        }
+        List<Contribution> contributions = contributionRepository.findByMemberOrderByPaymentDateDesc(member);
+        ContributionSummaryDto contributionSummary = contributionCalculationService.calculate(payments, contributions, LocalDate.now());
+        List<ContributionDto> paidTransactions = contributionCalculationService.getPaidTransactions(payments, contributions);
 
         Payment nextPayment = payments.stream()
-                .filter(payment -> payment.getStatus() != PaymentStatus.PAID)
+                .filter(this::isOutstandingPayment)
                 .sorted(Comparator.comparing(Payment::getDueDate))
                 .findFirst()
                 .orElse(null);
@@ -68,15 +68,19 @@ public class MemberService {
         MemberDashboardDto dashboard = new MemberDashboardDto();
         dashboard.setMemberName(member.getName());
         dashboard.setMemberNumber(member.getMemberNumber());
-        dashboard.setTotalContributions(totalContributions);
+        dashboard.setOrganizationName(organizationName(member));
+        dashboard.setTotalContributions(contributionSummary.getAmountPaid());
+        dashboard.setExpectedContribution(contributionSummary.getExpectedContribution());
+        dashboard.setAmountPaid(contributionSummary.getAmountPaid());
+        dashboard.setRemainingBalance(contributionSummary.getRemainingBalance());
         dashboard.setNextPaymentAmount(nextAmount);
         dashboard.setNextPaymentDueDate(nextDueDate);
         dashboard.setCompletedPayments(completedPayments);
         dashboard.setScheduledPayments(scheduledPayments);
         dashboard.setAccountStanding(member.getMembershipStatus() == com.cooperative.contribution.enumeration.MembershipStatus.ACTIVE ? "Good standing" : "Review required");
-        dashboard.setUpcomingPayments(payments.stream().limit(3).map(this::toPaymentDto).collect(Collectors.toList()));
-        dashboard.setRecentActivities(contributionRepository.findByMemberOrderByPaymentDateDesc(member).stream().limit(5).map(this::toContributionDto).collect(Collectors.toList()));
-        dashboard.setMonthlyContributionStats(buildMonthlyContributionStats(member));
+        dashboard.setUpcomingPayments(payments.stream().filter(this::isOutstandingPayment).limit(3).map(this::toPaymentDto).collect(Collectors.toList()));
+        dashboard.setRecentActivities(paidTransactions.stream().limit(5).collect(Collectors.toList()));
+        dashboard.setMonthlyContributionStats(buildMonthlyContributionStats(paidTransactions));
         return dashboard;
     }
 
@@ -90,8 +94,14 @@ public class MemberService {
                 member.getPhone(),
                 member.getAddress(),
                 member.getMembershipStatus(),
-                member.getDateJoined()
+                member.getDateJoined(),
+                organizationName(member)
         );
+    }
+
+    private String organizationName(Member member) {
+        CooperativeRegistration registration = member.getUser().getCooperativeRegistration();
+        return registration == null ? "No Organization Assigned" : registration.getCooperativeName();
     }
 
     public MemberProfileDto updateProfile(ProfileUpdateRequest request) {
@@ -130,7 +140,7 @@ public class MemberService {
 
     public List<PaymentDto> getUpcomingPayments() {
         return paymentRepository.findByMemberOrderByDueDateAsc(getCurrentMember()).stream()
-                .filter(payment -> payment.getStatus() != PaymentStatus.PAID)
+                .filter(this::isOutstandingPayment)
                 .map(this::toPaymentDto)
                 .collect(Collectors.toList());
     }
@@ -146,21 +156,25 @@ public class MemberService {
     }
 
     public List<ContributionDto> getContributions() {
-        return contributionRepository.findByMemberOrderByPaymentDateDesc(getCurrentMember()).stream()
-                .map(this::toContributionDto)
-                .collect(Collectors.toList());
+        Member member = getCurrentMember();
+        List<Payment> payments = paymentRepository.findByMemberOrderByDueDateAsc(member);
+        List<Contribution> contributions = contributionRepository.findByMemberOrderByPaymentDateDesc(member);
+        return contributionCalculationService.getPaidTransactions(payments, contributions);
     }
 
     public Map<String, Object> getContributionSummary() {
         Member member = getCurrentMember();
-        BigDecimal total = contributionRepository.sumAmountByMember(member);
-        if (total == null) {
-            total = BigDecimal.ZERO;
-        }
+        List<Payment> payments = paymentRepository.findByMemberOrderByDueDateAsc(member);
+        List<Contribution> contributions = contributionRepository.findByMemberOrderByPaymentDateDesc(member);
+        ContributionSummaryDto contributionSummary = contributionCalculationService.calculate(payments, contributions, LocalDate.now());
+        List<ContributionDto> paidTransactions = contributionCalculationService.getPaidTransactions(payments, contributions);
         Map<String, Object> summary = new HashMap<>();
-        summary.put("totalContributions", total);
-        summary.put("count", contributionRepository.countByMember(member));
-        summary.put("monthlyStatistics", buildMonthlyContributionStats(member));
+        summary.put("expectedContribution", contributionSummary.getExpectedContribution());
+        summary.put("amountPaid", contributionSummary.getAmountPaid());
+        summary.put("remainingBalance", contributionSummary.getRemainingBalance());
+        summary.put("totalContributions", contributionSummary.getAmountPaid());
+        summary.put("count", paidTransactions.size());
+        summary.put("monthlyStatistics", buildMonthlyContributionStats(paidTransactions));
         return summary;
     }
 
@@ -201,15 +215,14 @@ public class MemberService {
         notificationRepository.saveAll(unread);
     }
 
-    private Map<String, BigDecimal> buildMonthlyContributionStats(Member member) {
+    private Map<String, BigDecimal> buildMonthlyContributionStats(List<ContributionDto> contributions) {
         Map<String, BigDecimal> stats = new LinkedHashMap<>();
         List<String> months = List.of("JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC");
         for (String month : months) {
             stats.put(month, BigDecimal.ZERO);
         }
 
-        List<Contribution> contributions = contributionRepository.findByMemberOrderByPaymentDateDesc(member);
-        for (Contribution contribution : contributions) {
+        for (ContributionDto contribution : contributions) {
             YearMonth yearMonth = YearMonth.from(contribution.getPaymentDate());
             String key = yearMonth.getMonth().name().substring(0, 3).toUpperCase();
             if (stats.containsKey(key)) {
@@ -217,6 +230,12 @@ public class MemberService {
             }
         }
         return stats;
+    }
+
+    private boolean isOutstandingPayment(Payment payment) {
+        return payment.getStatus() != PaymentStatus.PAID
+                && payment.getStatus() != PaymentStatus.REJECTED
+                && payment.getStatus() != PaymentStatus.CANCELLED;
     }
 
     private PaymentDto toPaymentDto(Payment payment) {
@@ -230,15 +249,6 @@ public class MemberService {
         );
     }
 
-    private ContributionDto toContributionDto(Contribution contribution) {
-        return new ContributionDto(
-                contribution.getId(),
-                contribution.getAmount(),
-                contribution.getPaymentDate(),
-                contribution.getPaymentMethod(),
-                contribution.getReferenceNumber()
-        );
-    }
 
     private NotificationDto toNotificationDto(Notification notification) {
         return new NotificationDto(

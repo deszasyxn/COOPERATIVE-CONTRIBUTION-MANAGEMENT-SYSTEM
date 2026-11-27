@@ -113,7 +113,7 @@ function updateDashboardCards(dashboard) {
   const statCards = document.querySelectorAll(".stat-card");
 
   if (statCards.length >= 4) {
-    statCards[0].querySelector(".stat-value").textContent = formatCurrency(dashboard.totalContributions || 0);
+    statCards[0].querySelector(".stat-value").textContent = formatCurrency(dashboard.amountPaid != null ? dashboard.amountPaid : dashboard.totalContributions || 0);
     statCards[1].querySelector(".stat-value").textContent = formatCurrency(dashboard.nextPaymentAmount || 0);
     statCards[2].querySelector(".stat-value").innerHTML = `${dashboard.completedPayments || 0} <small>/ ${(dashboard.completedPayments || 0) + (dashboard.scheduledPayments || 0) || 0}</small>`;
     statCards[3].querySelector(".stat-value").textContent = dashboard.accountStanding || "Not available";
@@ -135,35 +135,39 @@ function updateDashboardCards(dashboard) {
     progress.style.width = `${percent}%`;
   }
 
+  const expectedValue = document.querySelector('[data-stat="expected-contribution"] .stat-value');
+  if (expectedValue) expectedValue.textContent = formatCurrency(dashboard.expectedContribution || 0);
+  const balanceValue = document.querySelector('[data-stat="remaining-balance"] .stat-value');
+  if (balanceValue) balanceValue.textContent = formatCurrency(dashboard.remainingBalance || 0);
+
   const contributionTotal = document.querySelector(".contribution-total strong");
   if (contributionTotal) {
-    contributionTotal.textContent = formatCurrency(dashboard.totalContributions || 0);
+    contributionTotal.textContent = formatCurrency(dashboard.amountPaid != null ? dashboard.amountPaid : dashboard.totalContributions || 0);
   }
 
   const activityList = document.querySelector(".activity-list");
   if (activityList && Array.isArray(dashboard.recentActivities)) {
     if (dashboard.recentActivities.length === 0) {
       activityList.innerHTML = '<div class="activity-item" style="justify-content:center; color:#6b7280;">No recent activity.</div>';
-      return;
-    }
-
-    activityList.innerHTML = dashboard.recentActivities.map((activity) => {
-      const formattedDate = activity.paymentDate ? new Date(activity.paymentDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric"
-      }) : "Recent payment";
-      return `
-        <div class="activity-item">
-          <span class="activity-icon success">✓</span>
-          <div class="activity-copy">
-            <strong>Contribution received</strong>
-            <p>${activity.paymentMethod || "Cash"} · ${formattedDate}</p>
+    } else {
+      activityList.innerHTML = dashboard.recentActivities.map((activity) => {
+        const formattedDate = activity.paymentDate ? new Date(activity.paymentDate).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric"
+        }) : "Recent payment";
+        return `
+          <div class="activity-item">
+            <span class="activity-icon success">✓</span>
+            <div class="activity-copy">
+              <strong>Contribution received</strong>
+              <p>${activity.paymentMethod || "Cash"} · ${formattedDate}</p>
+            </div>
+            <strong class="activity-amount">+${formatCurrency(activity.amount)}</strong>
           </div>
-          <strong class="activity-amount">+${formatCurrency(activity.amount)}</strong>
-        </div>
-      `;
-    }).join("");
+        `;
+      }).join("");
+    }
   }
 
   const upcomingTableBody = document.querySelector(".schedule-panel tbody");
@@ -223,6 +227,11 @@ async function loadMemberDashboard() {
     document.getElementById("pageTitle").innerHTML = `Welcome back, ${fullName.split(" ")[0]} <span>✦</span>`;
 
     const memberNumber = dashboard.memberNumber || "M-000";
+    const organizationName = dashboard.organizationName || "No Organization Assigned";
+    const organizationBanner = document.getElementById("member-organization");
+    const organizationAccount = document.getElementById("member-account-organization");
+    if (organizationBanner) organizationBanner.textContent = organizationName;
+    if (organizationAccount) organizationAccount.textContent = organizationName;
     const memberMeta = document.querySelector(".profile-main p");
     if (memberMeta) {
       memberMeta.innerHTML = `Member ID <strong>#${memberNumber}</strong><span class="bullet">•</span> Active member`;
@@ -233,6 +242,18 @@ async function loadMemberDashboard() {
     await updateNotificationCount();
   } catch (error) {
     showToast(error.message || "Unable to load dashboard data.");
+  }
+}
+
+async function refreshMemberDashboard() {
+  try {
+    const dashboard = await apiFetch("/api/member/dashboard");
+    if (!dashboard) return;
+    memberState = dashboard;
+    updateDashboardCards(dashboard);
+    await updateNotificationCount();
+  } catch (error) {
+    console.error("Unable to refresh member contribution details.", error);
   }
 }
 
@@ -376,7 +397,9 @@ document.getElementById("downloadBtn").addEventListener("click", () => {
     "MEMBERHUB — MEMBER STATEMENT",
     `Member: ${memberState?.memberName || "Member Name"}`,
     `Member ID: ${memberState?.memberNumber || "M-000"}`,
-    `Total contributions: ${formatCurrency(memberState?.totalContributions || 0)}`,
+    `Expected contribution: ${formatCurrency(memberState?.expectedContribution || 0)}`,
+    `Amount paid: ${formatCurrency(memberState?.amountPaid != null ? memberState.amountPaid : memberState?.totalContributions || 0)}`,
+    `Remaining balance: ${formatCurrency(memberState?.remainingBalance || 0)}`,
     `Next payment: ${formatCurrency(memberState?.nextPaymentAmount || 0)}`,
     "",
     "Generated from system records."
@@ -414,7 +437,7 @@ document.getElementById("userMenu").addEventListener("click", () => {
   showToast("Member account selected.");
 });
 
-window.setInterval(updateNotificationCount, 30000);
-window.addEventListener("focus", updateNotificationCount);
+window.setInterval(refreshMemberDashboard, 30000);
+window.addEventListener("focus", refreshMemberDashboard);
 
 loadMemberDashboard();

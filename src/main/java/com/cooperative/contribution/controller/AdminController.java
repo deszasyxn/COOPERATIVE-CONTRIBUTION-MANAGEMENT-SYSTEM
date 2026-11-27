@@ -29,6 +29,11 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getMembers());
     }
 
+    @GetMapping("/members/search")
+    public ResponseEntity<List<AdminMemberDto>> searchMembers(@RequestParam String name) {
+        return ResponseEntity.ok(adminService.searchMembers(name));
+    }
+
     @PostMapping("/members")
     public ResponseEntity<AdminMemberDto> createMember(@Valid @RequestBody AdminMemberRequest request) {
         return ResponseEntity.ok(adminService.createMember(request));

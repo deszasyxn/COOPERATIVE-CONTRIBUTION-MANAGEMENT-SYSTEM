@@ -46,6 +46,10 @@ public class User implements UserDetails {
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Member member;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cooperative_registration_id")
+    private CooperativeRegistration cooperativeRegistration;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -139,6 +143,14 @@ public class User implements UserDetails {
 
     public void setMember(Member member) {
         this.member = member;
+    }
+
+    public CooperativeRegistration getCooperativeRegistration() {
+        return cooperativeRegistration;
+    }
+
+    public void setCooperativeRegistration(CooperativeRegistration cooperativeRegistration) {
+        this.cooperativeRegistration = cooperativeRegistration;
     }
 
     @Override

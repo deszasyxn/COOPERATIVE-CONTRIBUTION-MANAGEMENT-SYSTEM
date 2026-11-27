@@ -80,7 +80,7 @@
 
       <div class="welcome">
         <h1>Welcome, Admin!</h1>
-        <p>Here's an overview of the system.</p>
+        <p>Here's an overview of the system. <span class="organization-summary">Organization: <strong id="admin-organization">No Organization Assigned</strong></span></p>
       </div>
 
       <div class="top-actions">
@@ -131,11 +131,29 @@
 
           <article class="stat">
             <div class="stat-top">
-              <span class="stat-label">Total Contributions</span>
+              <span class="stat-label">Amount Paid</span>
               <span class="ic-box"><svg class="ic"><use href="#i-peso"/></svg></span>
             </div>
             <b class="stat-value" data-stat="contributions">₱0.00</b>
             <a href="#payment-records" class="stat-link">View records <svg class="ic"><use href="#i-arrow"/></svg></a>
+          </article>
+
+          <article class="stat">
+            <div class="stat-top">
+              <span class="stat-label">Expected to Date</span>
+              <span class="ic-box"><svg class="ic"><use href="#i-calendar"/></svg></span>
+            </div>
+            <b class="stat-value" data-stat="expected-contribution">₱0.00</b>
+            <span class="stat-label">Scheduled payments due to today</span>
+          </article>
+
+          <article class="stat">
+            <div class="stat-top">
+              <span class="stat-label">Remaining Balance</span>
+              <span class="ic-box"><svg class="ic"><use href="#i-scale"/></svg></span>
+            </div>
+            <b class="stat-value" data-stat="remaining-balance">₱0.00</b>
+            <span class="stat-label">Across this organization’s members</span>
           </article>
         </div>
       </section>
@@ -175,13 +193,32 @@
           <article class="card" id="payment-computation">
             <header class="card-head">
               <span class="ic-box"><svg class="ic"><use href="#i-calc"/></svg></span>
-              <div class="head-text"><h3>Payment Computation</h3><p>Compute and calculate contributions.</p></div>
-              <a href="#" class="view-all">View all <svg class="ic"><use href="#i-chevron-r"/></svg></a>
+              <div class="head-text"><h3>Payment Computation</h3><p>Search a member to review their contribution totals.</p></div>
             </header>
-            <div class="actions">
-              <a href="#" class="action wide"><svg class="ic"><use href="#i-calc"/></svg>Compute Expected Contribution</a>
-              <a href="#" class="action"><svg class="ic"><use href="#i-hand-coin"/></svg>Calculate Amount Paid</a>
-              <a href="#" class="action"><svg class="ic"><use href="#i-scale"/></svg>Calculate Remaining Balance</a>
+            <div class="computation-search">
+              <label for="contribution-member-search">Search member by name</label>
+              <input type="search" id="contribution-member-search" autocomplete="off" placeholder="Enter a member's full or partial name">
+              <p class="computation-message" id="contribution-search-message" role="status" aria-live="polite">Enter a name to find members in your organization.</p>
+              <label for="contribution-member-results">Matching members</label>
+              <select id="contribution-member-results" disabled>
+                <option value="">Search for a member first</option>
+              </select>
+            </div>
+            <div class="computation-summary" id="contribution-summary" hidden>
+              <div class="computation-member">
+                <span class="computation-eyebrow">Selected member</span>
+                <h4 id="contribution-member-name"></h4>
+                <p><span id="contribution-member-number"></span><span aria-hidden="true"> · </span><span id="contribution-member-organization"></span></p>
+              </div>
+              <p class="computation-no-records" id="computation-no-records" role="status" hidden>No contribution or payment records were found for this member.</p>
+              <div class="computation-metrics">
+                <div class="computation-metric"><span>Upcoming Contributions</span><strong id="summary-upcoming"></strong></div>
+                <div class="computation-metric"><span>Overdue Contributions</span><strong id="summary-overdue"></strong></div>
+                <div class="computation-metric"><span>Pending Contributions</span><strong id="summary-pending"></strong></div>
+                <div class="computation-metric"><span>Expected Contribution</span><strong id="summary-expected"></strong></div>
+                <div class="computation-metric"><span>Amount Paid</span><strong id="summary-paid"></strong></div>
+                <div class="computation-metric"><span>Remaining Balance</span><strong id="summary-balance"></strong></div>
+              </div>
             </div>
           </article>
 
@@ -245,6 +282,10 @@
             <tr>
               <th>Member #</th>
               <th>Name</th>
+              <th>Organization Name</th>
+              <th>Expected</th>
+              <th>Amount Paid</th>
+              <th>Balance</th>
               <th>Email</th>
               <th>Phone</th>
               <th>Status</th>
@@ -346,6 +387,8 @@
             <option value="PAID">Paid</option>
             <option value="OVERDUE">Overdue</option>
             <option value="PENDING">Pending</option>
+            <option value="REJECTED">Rejected</option>
+            <option value="CANCELLED">Cancelled</option>
           </select>
         </div>
         <div class="form-error" id="payment-form-error"></div>

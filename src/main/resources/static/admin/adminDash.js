@@ -134,8 +134,14 @@ function statusBadge(status) {
   return '<span class="status-badge ' + cls + '">' + status + '</span>';
 }
 
+function formatCurrency(value) {
+  return "\u20B1" + Number(value || 0).toLocaleString("en-PH", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
 // ---- Cached data -------------------------------------------
 var membersCache = [];
+var contributionSearchTimer = null;
+var contributionSearchRequest = 0;
 
 // ---- Load overview stats -----------------------------------
 function loadStats() {
@@ -143,7 +149,9 @@ function loadStats() {
     document.querySelector('[data-stat="members"]').textContent = data.totalMembers || 0;
     document.querySelector('[data-stat="upcoming"]').textContent = data.upcomingPayments || 0;
     var contrib = data.totalContributions || 0;
-    document.querySelector('[data-stat="contributions"]').textContent = "\u20B1" + Number(contrib).toLocaleString("en-PH", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    document.querySelector('[data-stat="contributions"]').textContent = formatCurrency(data.amountPaid != null ? data.amountPaid : contrib);
+    document.querySelector('[data-stat="expected-contribution"]').textContent = formatCurrency(data.expectedContribution);
+    document.querySelector('[data-stat="remaining-balance"]').textContent = formatCurrency(data.remainingBalance);
     var now = new Date();
     var updated = document.querySelector('[data-stat="last-updated"]');
     if (updated) updated.textContent = now.toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -164,7 +172,7 @@ function loadMembers() {
 function renderMembersTable(members) {
   var tbody = document.getElementById("members-tbody");
   if (!members || members.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="loading-text">No members found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="loading-text">No members found.</td></tr>';
     return;
   }
   var html = "";
@@ -172,6 +180,10 @@ function renderMembersTable(members) {
     html += '<tr>' +
       '<td>' + escapeHtml(m.memberNumber || "\u2014") + '</td>' +
       '<td>' + escapeHtml(m.name) + '</td>' +
+      '<td>' + escapeHtml(m.organizationName || "No Organization Assigned") + '</td>' +
+      '<td>' + escapeHtml(formatCurrency(m.expectedContribution)) + '</td>' +
+      '<td>' + escapeHtml(formatCurrency(m.amountPaid)) + '</td>' +
+      '<td>' + escapeHtml(formatCurrency(m.remainingBalance)) + '</td>' +
       '<td>' + escapeHtml(m.email) + '</td>' +
       '<td>' + escapeHtml(m.phone || "\u2014") + '</td>' +
       '<td>' + statusBadge(m.membershipStatus) + '</td>' +
@@ -192,6 +204,77 @@ function populateMemberSelect(members) {
     html += '<option value="' + m.id + '">' + escapeHtml(m.name) + " (" + escapeHtml(m.memberNumber || "") + ")</option>";
   });
   sel.innerHTML = html;
+}
+
+function searchContributionMembers() {
+  var input = document.getElementById("contribution-member-search");
+  var results = document.getElementById("contribution-member-results");
+  var message = document.getElementById("contribution-search-message");
+  var summary = document.getElementById("contribution-summary");
+  var query = input.value.trim();
+  var requestId = ++contributionSearchRequest;
+
+  clearTimeout(contributionSearchTimer);
+  results.disabled = true;
+  results.innerHTML = '<option value="">No member selected</option>';
+  summary.hidden = true;
+
+  if (!query) {
+    message.textContent = "Enter a name to find members in your organization.";
+    return;
+  }
+
+  message.textContent = "Searching members...";
+  contributionSearchTimer = setTimeout(function () {
+    api("/api/admin/members/search?name=" + encodeURIComponent(query)).then(function (matches) {
+      if (requestId !== contributionSearchRequest) return;
+      if (!matches || matches.length === 0) {
+        message.textContent = "No matching members found.";
+        return;
+      }
+
+      var options = '<option value="">Select the correct member</option>';
+      matches.forEach(function (member) {
+        var label = member.name + " (" + (member.memberNumber || "No member number") + ") — " + (member.organizationName || "No Organization Assigned");
+        options += '<option value="' + member.id + '">' + escapeHtml(label) + '</option>';
+      });
+      results.innerHTML = options;
+      results.disabled = false;
+      message.textContent = matches.length + " matching member" + (matches.length === 1 ? "" : "s") + ". Select the correct account to view its totals.";
+    }).catch(function () {
+      if (requestId === contributionSearchRequest) message.textContent = "Unable to search members right now. Please try again.";
+    });
+  }, 250);
+}
+
+function loadSelectedMemberSummary() {
+  var results = document.getElementById("contribution-member-results");
+  var message = document.getElementById("contribution-search-message");
+  var summary = document.getElementById("contribution-summary");
+  var memberId = results.value;
+  if (!memberId) {
+    summary.hidden = true;
+    return;
+  }
+
+  message.textContent = "Loading the selected member's contribution records...";
+  api("/api/admin/members/" + encodeURIComponent(memberId)).then(function (member) {
+    if (results.value !== memberId) return;
+    document.getElementById("contribution-member-name").textContent = member.name || "Member";
+    document.getElementById("contribution-member-number").textContent = member.memberNumber || "No member number";
+    document.getElementById("contribution-member-organization").textContent = member.organizationName || "No Organization Assigned";
+    document.getElementById("summary-upcoming").textContent = formatCurrency(member.upcomingContributions);
+    document.getElementById("summary-overdue").textContent = formatCurrency(member.overdueContributions);
+    document.getElementById("summary-pending").textContent = formatCurrency(member.pendingContributions);
+    document.getElementById("summary-expected").textContent = formatCurrency(member.expectedContribution);
+    document.getElementById("summary-paid").textContent = formatCurrency(member.amountPaid);
+    document.getElementById("summary-balance").textContent = formatCurrency(member.remainingBalance);
+    document.getElementById("computation-no-records").hidden = Boolean(member.hasContributionRecords);
+    summary.hidden = false;
+    message.textContent = "Contribution totals loaded for the selected member.";
+  }).catch(function (err) {
+    if (results.value === memberId) message.textContent = err.message || "Unable to load this member's contribution summary.";
+  });
 }
 
 // ---- Member form -------------------------------------------
@@ -334,6 +417,7 @@ function submitPaymentForm(e) {
   }).then(function () {
     closeModal("modal-payment");
     loadStats();
+    loadMembers();
   }).catch(function (err) {
     errEl.textContent = err.message || "Failed to record payment.";
   });
@@ -360,7 +444,7 @@ function loadPaymentHistory() {
         '<td>' + escapeHtml(p.dueDate || "\u2014") + '</td>' +
         '<td>' + statusBadge(p.status) + '</td>' +
         '<td>' +
-          (p.status === "PAID" ? '<button class="table-action-btn" onclick="issueReceipt(' + p.id + ')">Issue receipt</button>' : '<button class="table-action-btn" onclick="confirmPayment(' + p.id + ')">Confirm</button>') +
+          (p.status === "PAID" ? '<button class="table-action-btn" onclick="issueReceipt(' + p.id + ')">Issue receipt</button>' : (p.status === "REJECTED" || p.status === "CANCELLED" ? '' : '<button class="table-action-btn" onclick="confirmPayment(' + p.id + ')">Confirm</button>')) +
         '</td>' +
       '</tr>';
     });
@@ -374,6 +458,7 @@ function confirmPayment(id) {
   api("/api/admin/payments/" + id + "/confirm", { method: "POST" }).then(function () {
     loadPaymentHistory();
     loadStats();
+    loadMembers();
   }).catch(function (err) {
     alert("Failed to confirm payment: " + (err.message || "Unknown error"));
   });
@@ -490,7 +575,9 @@ document.addEventListener("click", function (e) {
     loadStats();
     alert("Reports: Total Members: " + (document.querySelector('[data-stat="members"]').textContent) +
           "\nUpcoming Payments: " + (document.querySelector('[data-stat="upcoming"]').textContent) +
-          "\nTotal Contributions: " + (document.querySelector('[data-stat="contributions"]').textContent));
+          "\nExpected to Date: " + (document.querySelector('[data-stat="expected-contribution"]').textContent) +
+          "\nAmount Paid: " + (document.querySelector('[data-stat="contributions"]').textContent) +
+          "\nRemaining Balance: " + (document.querySelector('[data-stat="remaining-balance"]').textContent));
     e.preventDefault();
   }
 
@@ -505,6 +592,8 @@ document.addEventListener("click", function (e) {
 document.getElementById("btn-add-member").addEventListener("click", showAddMemberForm);
 document.getElementById("member-form").addEventListener("submit", submitMemberForm);
 document.getElementById("payment-form").addEventListener("submit", submitPaymentForm);
+document.getElementById("contribution-member-search").addEventListener("input", searchContributionMembers);
+document.getElementById("contribution-member-results").addEventListener("change", loadSelectedMemberSummary);
 
 // ---- Profile picture ---------------------------------------
 var profilePhotoInput = document.getElementById("profile-photo-input");
@@ -570,6 +659,8 @@ document.getElementById("profile-logout").addEventListener("click", function (e)
       // Display the logged-in user's name
       var nameEl = document.querySelector(".profile-name");
       if (nameEl && user.username) nameEl.textContent = user.username;
+      var organizationEl = document.getElementById("admin-organization");
+      if (organizationEl) organizationEl.textContent = user.organizationName || "No Organization Assigned";
       var welcomeH1 = document.querySelector(".welcome h1");
       if (welcomeH1 && user.username) welcomeH1.textContent = "Welcome, " + user.username + "!";
       loadProfilePhoto();
@@ -590,6 +681,8 @@ document.getElementById("profile-logout").addEventListener("click", function (e)
       // from cache and let the dashboard work with cached data until logout
       var nameEl = document.querySelector(".profile-name");
       if (nameEl) nameEl.textContent = stored.username;
+      var organizationEl = document.getElementById("admin-organization");
+      if (organizationEl) organizationEl.textContent = stored.organizationName || "No Organization Assigned";
       var welcomeH1 = document.querySelector(".welcome h1");
       if (welcomeH1) welcomeH1.textContent = "Welcome, " + stored.username + "!";
       // Try to reload data; if API calls return 401, the api() helper redirects

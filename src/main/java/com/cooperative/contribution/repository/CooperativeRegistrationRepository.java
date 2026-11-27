@@ -12,4 +12,6 @@ public interface CooperativeRegistrationRepository extends JpaRepository<Coopera
     Optional<CooperativeRegistration> findByNormalizedName(String normalizedName);
 
     Optional<CooperativeRegistration> findBySetupTokenHash(String setupTokenHash);
+
+    Optional<CooperativeRegistration> findByEmailAndUsernameAndStatus(String email, String username, String status);
 }

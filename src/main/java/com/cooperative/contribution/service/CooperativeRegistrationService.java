@@ -145,6 +145,7 @@ public class CooperativeRegistrationService {
         }
 
         User admin = new User(username, email, passwordEncoder.encode(request.getPassword()), Role.ROLE_ADMIN);
+        admin.setCooperativeRegistration(registration);
         try {
             userRepository.saveAndFlush(admin);
         } catch (DataIntegrityViolationException ex) {

@@ -8,6 +8,9 @@ public class AdminReportDto {
     private long upcomingPayments;
     private BigDecimal totalContributions;
     private BigDecimal totalCollected;
+    private BigDecimal expectedContribution = BigDecimal.ZERO;
+    private BigDecimal amountPaid = BigDecimal.ZERO;
+    private BigDecimal remainingBalance = BigDecimal.ZERO;
 
     public AdminReportDto() {
     }
@@ -49,5 +52,31 @@ public class AdminReportDto {
 
     public void setTotalCollected(BigDecimal totalCollected) {
         this.totalCollected = totalCollected;
+    }
+
+    public BigDecimal getExpectedContribution() {
+        return expectedContribution;
+    }
+
+    public void setExpectedContribution(BigDecimal expectedContribution) {
+        this.expectedContribution = expectedContribution;
+    }
+
+    public BigDecimal getAmountPaid() {
+        return amountPaid;
+    }
+
+    public void setAmountPaid(BigDecimal amountPaid) {
+        this.amountPaid = amountPaid;
+        this.totalContributions = amountPaid;
+        this.totalCollected = amountPaid;
+    }
+
+    public BigDecimal getRemainingBalance() {
+        return remainingBalance;
+    }
+
+    public void setRemainingBalance(BigDecimal remainingBalance) {
+        this.remainingBalance = remainingBalance;
     }
 }

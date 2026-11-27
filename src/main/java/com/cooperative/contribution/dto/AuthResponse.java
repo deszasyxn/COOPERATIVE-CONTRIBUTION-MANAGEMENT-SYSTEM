@@ -6,15 +6,21 @@ public class AuthResponse {
     private String email;
     private String role;
     private String redirect;
+    private String organizationName;
 
     public AuthResponse() {
     }
 
     public AuthResponse(String username, String email, String role, String redirect) {
+        this(username, email, role, redirect, "No Organization Assigned");
+    }
+
+    public AuthResponse(String username, String email, String role, String redirect, String organizationName) {
         this.username = username;
         this.email = email;
         this.role = role;
         this.redirect = redirect;
+        this.organizationName = organizationName;
     }
 
     public String getUsername() {
@@ -47,5 +53,13 @@ public class AuthResponse {
 
     public void setRedirect(String redirect) {
         this.redirect = redirect;
+    }
+
+    public String getOrganizationName() {
+        return organizationName;
+    }
+
+    public void setOrganizationName(String organizationName) {
+        this.organizationName = organizationName;
     }
 }

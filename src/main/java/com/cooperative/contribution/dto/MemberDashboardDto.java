@@ -9,7 +9,11 @@ public class MemberDashboardDto {
 
     private String memberName;
     private String memberNumber;
+    private String organizationName = "No Organization Assigned";
     private BigDecimal totalContributions = BigDecimal.ZERO;
+    private BigDecimal expectedContribution = BigDecimal.ZERO;
+    private BigDecimal amountPaid = BigDecimal.ZERO;
+    private BigDecimal remainingBalance = BigDecimal.ZERO;
     private BigDecimal nextPaymentAmount = BigDecimal.ZERO;
     private LocalDate nextPaymentDueDate;
     private long completedPayments;
@@ -35,12 +39,46 @@ public class MemberDashboardDto {
         this.memberNumber = memberNumber;
     }
 
+    public String getOrganizationName() {
+        return organizationName;
+    }
+
+    public void setOrganizationName(String organizationName) {
+        this.organizationName = organizationName;
+    }
+
     public BigDecimal getTotalContributions() {
         return totalContributions;
     }
 
     public void setTotalContributions(BigDecimal totalContributions) {
         this.totalContributions = totalContributions;
+        this.amountPaid = totalContributions;
+    }
+
+    public BigDecimal getExpectedContribution() {
+        return expectedContribution;
+    }
+
+    public void setExpectedContribution(BigDecimal expectedContribution) {
+        this.expectedContribution = expectedContribution;
+    }
+
+    public BigDecimal getAmountPaid() {
+        return amountPaid;
+    }
+
+    public void setAmountPaid(BigDecimal amountPaid) {
+        this.amountPaid = amountPaid;
+        this.totalContributions = amountPaid;
+    }
+
+    public BigDecimal getRemainingBalance() {
+        return remainingBalance;
+    }
+
+    public void setRemainingBalance(BigDecimal remainingBalance) {
+        this.remainingBalance = remainingBalance;
     }
 
     public BigDecimal getNextPaymentAmount() {

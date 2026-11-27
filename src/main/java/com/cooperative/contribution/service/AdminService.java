@@ -5,6 +5,7 @@ import com.cooperative.contribution.entity.*;
 import com.cooperative.contribution.enumeration.*;
 import com.cooperative.contribution.exception.ApiException;
 import com.cooperative.contribution.repository.*;
+import com.cooperative.contribution.security.SecurityUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,8 +16,11 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -29,28 +33,46 @@ public class AdminService {
     private final PaymentRepository paymentRepository;
     private final ContributionRepository contributionRepository;
     private final NotificationRepository notificationRepository;
+    private final CooperativeRegistrationRepository cooperativeRegistrationRepository;
+    private final ContributionCalculationService contributionCalculationService;
     private final PasswordEncoder passwordEncoder;
 
     public AdminService(MemberRepository memberRepository, UserRepository userRepository,
                         PaymentRepository paymentRepository, ContributionRepository contributionRepository,
-                        NotificationRepository notificationRepository, PasswordEncoder passwordEncoder) {
+                        NotificationRepository notificationRepository,
+                        CooperativeRegistrationRepository cooperativeRegistrationRepository,
+                        ContributionCalculationService contributionCalculationService,
+                        PasswordEncoder passwordEncoder) {
         this.memberRepository = memberRepository;
         this.userRepository = userRepository;
         this.paymentRepository = paymentRepository;
         this.contributionRepository = contributionRepository;
         this.notificationRepository = notificationRepository;
+        this.cooperativeRegistrationRepository = cooperativeRegistrationRepository;
+        this.contributionCalculationService = contributionCalculationService;
         this.passwordEncoder = passwordEncoder;
     }
 
     public List<AdminMemberDto> getMembers() {
-        return memberRepository.findAllByOrderByDateJoinedDesc().stream()
+        return getMembersForCurrentCooperative().stream()
+                .map(this::toAdminMemberDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<AdminMemberDto> searchMembers(String name) {
+        if (name == null || name.isBlank()) {
+            return List.of();
+        }
+        String query = name.trim().toLowerCase(Locale.ROOT);
+        return getMembersForCurrentCooperative().stream()
+                .filter(member -> member.getName() != null
+                        && member.getName().toLowerCase(Locale.ROOT).contains(query))
                 .map(this::toAdminMemberDto)
                 .collect(Collectors.toList());
     }
 
     public AdminMemberDto getMember(Long id) {
-        Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Member not found."));
+        Member member = getScopedMember(id);
         return toAdminMemberDto(member);
     }
 
@@ -80,6 +102,7 @@ public class AdminService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.ROLE_MEMBER);
         user.setEnabled(true);
+        user.setCooperativeRegistration(getCurrentAdminCooperativeRegistration());
         user = userRepository.save(user);
 
         Member member = new Member(generateMemberNumber(), request.getName(), user);
@@ -96,8 +119,7 @@ public class AdminService {
     }
 
     public AdminMemberDto updateMember(Long id, AdminMemberRequest request) {
-        Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Member not found."));
+        Member member = getScopedMember(id);
         User user = member.getUser();
 
         if (request.getName() != null && !request.getName().isBlank()) {
@@ -141,8 +163,7 @@ public class AdminService {
     }
 
     public AdminMemberDto updateMemberStatus(Long id, StatusUpdateRequest request) {
-        Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Member not found."));
+        Member member = getScopedMember(id);
         if (request.getMembershipStatus() != null) {
             member.setMembershipStatus(request.getMembershipStatus());
         }
@@ -151,8 +172,7 @@ public class AdminService {
     }
 
     public PaymentDto createPayment(AdminPaymentRequest request) {
-        Member member = memberRepository.findById(request.getMemberId())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Member not found."));
+        Member member = getScopedMember(request.getMemberId());
 
         Payment payment = new Payment(
                 member,
@@ -170,8 +190,7 @@ public class AdminService {
     }
 
     public PaymentDto updatePayment(Long paymentId, PaymentRequest request) {
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Payment not found."));
+        Payment payment = getScopedPayment(paymentId);
 
         payment.setReferenceNumber(request.getReferenceNumber());
         payment.setDescription(request.getDescription());
@@ -186,21 +205,36 @@ public class AdminService {
     }
 
     public PaymentDto confirmPayment(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
+        Payment payment = paymentRepository.findByIdForUpdate(paymentId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Payment not found."));
+        getScopedMember(payment.getMember().getId());
+
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            return toPaymentDto(payment);
+        }
+        if (payment.getStatus() == PaymentStatus.REJECTED || payment.getStatus() == PaymentStatus.CANCELLED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "A rejected or cancelled payment cannot be confirmed.");
+        }
 
         payment.setStatus(PaymentStatus.PAID);
         paymentRepository.save(payment);
 
-        Contribution contribution = new Contribution(
-                payment.getMember(),
-                payment.getAmount(),
-                LocalDateTime.now(),
-                "System",
-                "CONTRIB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()
-        );
-        contribution.setPayment(payment);
-        contributionRepository.save(contribution);
+        BigDecimal alreadyRecorded = contributionRepository.findByPayment(payment).stream()
+                .map(Contribution::getAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal remainingTransactionAmount = payment.getAmount().subtract(alreadyRecorded);
+        if (remainingTransactionAmount.compareTo(BigDecimal.ZERO) > 0) {
+            Contribution contribution = new Contribution(
+                    payment.getMember(),
+                    remainingTransactionAmount,
+                    LocalDateTime.now(),
+                    "System",
+                    "CONTRIB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+            );
+            contribution.setPayment(payment);
+            contributionRepository.save(contribution);
+        }
 
         Notification notification = new Notification(payment.getMember(), "Payment confirmed", "Payment " + payment.getReferenceNumber() + " has been confirmed.", NotificationType.PAYMENT);
         notificationRepository.save(notification);
@@ -208,8 +242,7 @@ public class AdminService {
     }
 
     public String issueReceipt(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Payment not found."));
+        Payment payment = getScopedPayment(paymentId);
         if (payment.getStatus() != PaymentStatus.PAID) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "A receipt can only be issued for a confirmed payment.");
         }
@@ -233,25 +266,44 @@ public class AdminService {
     }
 
     public List<PaymentDto> getAllPayments() {
-        return paymentRepository.findAllByOrderByDueDateDesc().stream()
+        List<Payment> payments = new ArrayList<>();
+        for (Member member : getMembersForCurrentCooperative()) {
+            payments.addAll(paymentRepository.findByMemberOrderByDueDateAsc(member));
+        }
+        return payments.stream()
+                .sorted(Comparator.comparing(Payment::getDueDate).reversed())
                 .map(this::toPaymentDto)
                 .collect(Collectors.toList());
     }
 
     public AdminReportDto getReport() {
-        long totalMembers = memberRepository.count();
-        long upcomingPaymentCount = paymentRepository.findAll().stream()
-                .filter(payment -> payment.getStatus() != PaymentStatus.PAID)
-                .count();
-        BigDecimal totalContributions = contributionRepository.findAll().stream()
-                .map(Contribution::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalCollected = paymentRepository.findAll().stream()
-                .filter(payment -> payment.getStatus() == PaymentStatus.PAID)
-                .map(Payment::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        LocalDate asOfDate = LocalDate.now();
+        List<Member> members = getMembersForCurrentCooperative();
+        BigDecimal expectedContribution = BigDecimal.ZERO;
+        BigDecimal amountPaid = BigDecimal.ZERO;
+        BigDecimal remainingBalance = BigDecimal.ZERO;
+        long upcomingPaymentCount = 0;
 
-        return new AdminReportDto(totalMembers, upcomingPaymentCount, totalContributions, totalCollected);
+        for (Member member : members) {
+            List<Payment> payments = paymentRepository.findByMemberOrderByDueDateAsc(member);
+            List<Contribution> contributions = contributionRepository.findByMemberOrderByPaymentDateDesc(member);
+            ContributionSummaryDto summary = contributionCalculationService.calculate(payments, contributions, asOfDate);
+            expectedContribution = expectedContribution.add(summary.getExpectedContribution());
+            amountPaid = amountPaid.add(summary.getAmountPaid());
+            remainingBalance = remainingBalance.add(summary.getRemainingBalance());
+            upcomingPaymentCount += payments.stream()
+                    .filter(payment -> payment.getDueDate().isAfter(asOfDate))
+                    .filter(this::isOutstandingPayment)
+                    .count();
+        }
+
+        AdminReportDto report = new AdminReportDto();
+        report.setTotalMembers(members.size());
+        report.setUpcomingPayments(upcomingPaymentCount);
+        report.setExpectedContribution(expectedContribution);
+        report.setAmountPaid(amountPaid);
+        report.setRemainingBalance(remainingBalance);
+        return report;
     }
 
     private String generateMemberNumber() {
@@ -259,15 +311,79 @@ public class AdminService {
     }
 
     private AdminMemberDto toAdminMemberDto(Member member) {
-        return new AdminMemberDto(
+        CooperativeRegistration registration = member.getUser().getCooperativeRegistration();
+        AdminMemberDto dto = new AdminMemberDto(
                 member.getId(),
                 member.getMemberNumber(),
                 member.getName(),
                 member.getUser().getEmail(),
                 member.getPhone(),
                 member.getAddress(),
-                member.getMembershipStatus()
+                member.getMembershipStatus(),
+                registration == null ? "No Organization Assigned" : registration.getCooperativeName()
         );
+        List<Payment> payments = paymentRepository.findByMemberOrderByDueDateAsc(member);
+        List<Contribution> contributions = contributionRepository.findByMemberOrderByPaymentDateDesc(member);
+        ContributionSummaryDto summary = contributionCalculationService.calculate(payments, contributions, LocalDate.now());
+        dto.setExpectedContribution(summary.getExpectedContribution());
+        dto.setUpcomingContributions(summary.getUpcomingContributions());
+        dto.setOverdueContributions(summary.getOverdueContributions());
+        dto.setPendingContributions(summary.getPendingContributions());
+        dto.setAmountPaid(summary.getAmountPaid());
+        dto.setRemainingBalance(summary.getRemainingBalance());
+        dto.setHasContributionRecords(summary.isHasContributionRecords());
+        return dto;
+    }
+
+    private List<Member> getMembersForCurrentCooperative() {
+        CooperativeRegistration registration = getCurrentAdminCooperativeRegistration();
+        if (registration == null) {
+            return memberRepository.findAllByUser_CooperativeRegistrationIsNullOrderByDateJoinedDesc();
+        }
+        return memberRepository.findAllByUser_CooperativeRegistration_IdOrderByDateJoinedDesc(registration.getId());
+    }
+
+    private Member getScopedMember(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Member not found."));
+        CooperativeRegistration adminRegistration = getCurrentAdminCooperativeRegistration();
+        CooperativeRegistration memberRegistration = member.getUser().getCooperativeRegistration();
+        Long adminRegistrationId = adminRegistration == null ? null : adminRegistration.getId();
+        Long memberRegistrationId = memberRegistration == null ? null : memberRegistration.getId();
+        if (!Objects.equals(adminRegistrationId, memberRegistrationId)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Member not found.");
+        }
+        return member;
+    }
+
+    private Payment getScopedPayment(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Payment not found."));
+        getScopedMember(payment.getMember().getId());
+        return payment;
+    }
+
+    private boolean isOutstandingPayment(Payment payment) {
+        return payment.getStatus() != PaymentStatus.PAID
+                && payment.getStatus() != PaymentStatus.REJECTED
+                && payment.getStatus() != PaymentStatus.CANCELLED;
+    }
+
+    private CooperativeRegistration getCurrentAdminCooperativeRegistration() {
+        User authenticatedAdmin = SecurityUtil.getCurrentUser();
+        User admin = userRepository.findById(authenticatedAdmin.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "You are not authenticated."));
+        CooperativeRegistration registration = admin.getCooperativeRegistration();
+        if (registration == null) {
+            registration = cooperativeRegistrationRepository.findByEmailAndUsernameAndStatus(
+                            admin.getEmail(), admin.getUsername(), "ACTIVE")
+                    .orElse(null);
+            if (registration != null) {
+                admin.setCooperativeRegistration(registration);
+                userRepository.save(admin);
+            }
+        }
+        return registration;
     }
 
     private PaymentDto toPaymentDto(Payment payment) {
